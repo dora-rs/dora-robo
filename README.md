@@ -1,5 +1,11 @@
 # Operating-Platform
 
+## make sure your camera id
+
+```sh
+ls /dev/video* # ubuntu
+```
+
 ## install
 
 ```sh
