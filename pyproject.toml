@@ -6,14 +6,15 @@ authors = [
     {name = "Xiang Yang",email = "ryu-yang@qq.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "flask (>=3.1.1,<4.0.0)",
+requires-python = ">=3.11,<3.14"
+dependencies = [    
+    "flask (>=3.0.1,<4.0.0)",
     "gevent (>=25.5.1,<26.0.0)",
-    "opencv-video-capture (>=0.3.11,<0.4.0)",
     "dora-rs-cli (>=0.3.11,<0.4.0)",
     "dora-rerun (>=0.3.11,<0.4.0)",
-    "flask-cors (>=6.0.1,<7.0.0) ; python_version < \"4.0\""
+    "flask-cors (>=6.0.1,<7.0.0) ; python_version < \"4.0\"",
+    "lerobot_lite",
+    "pyzmq (>=27.0.0,<28.0.0)",
 ]
 
 
@@ -21,6 +22,9 @@ dependencies = [
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
 
+[tool.poetry.dependencies]
+lerobot_lite = { path = "operating_platform/lerobot_lite", develop = true }

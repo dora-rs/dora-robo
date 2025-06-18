@@ -1,0 +1,129 @@
+[06/18 16:26:16.778485][info][41216][Context.cpp:68] Context created with config: default config!
+[06/18 16:26:16.778491][info][41216][Context.cpp:73] Work directory=/home/ryu-yang/Works/Operating-Platform/operating_platform/robot, SDK version=v1.10.16-20241021-5113dad
+[06/18 16:26:16.778500][info][41216][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[06/18 16:26:16.788238][warning][41216][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:26:16.788243][warning][41216][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:26:16.788246][warning][41216][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:26:16.788280][info][41216][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[06/18 16:26:16.788297][info][41216][DeviceManager.cpp:15] Current found device(s): (3)
+[06/18 16:26:16.788303][info][41216][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:26:16.788307][info][41216][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:26:16.788310][info][41216][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:26:16.788374][error][41216][HandleLibusb.hpp:89] failed to claim usb interface: 0, error: OB_USB_STATUS_BUSY
+[06/18 16:26:16.801215][info][41216][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:26:16.801685][error][41216][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:26:16.806100][info][41216][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S74100MH
+[06/18 16:26:16.807534][info][41216][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:26:16.807994][info][41216][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:26:16.984732][info][41216][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:26:16.984828][info][41216][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:26:16.984999][info][41216][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:26:16.985005][info][41216][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:26:16.985013][info][41216][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:26:16.985070][warning][41216][ObException.cpp:5] Current device does not support frame sync!
+[06/18 16:26:16.985125][warning][41216][Pipeline.cpp:45] Execute failure! A libobsensor_exception has occurred!
+	 - where:45#Pipeline
+	 - msg:Current device does not support frame sync!
+	 - type:N11libobsensor31unsupported_operation_exceptionE
+[06/18 16:26:16.985129][info][41216][Pipeline.cpp:47] Pipeline created with device: {name: DaBai DC1, sn: CC1S74100MH}, @0x2CED1830
+[06/18 16:26:16.987287][info][41216][OpenNIDevice.cpp:632] Color sensor has been created!
+[06/18 16:26:16.987432][info][41216][OpenNIDevice.cpp:384] Depth sensor has been created!
+[06/18 16:26:16.987534][info][41216][Pipeline.cpp:188] Check and set config start!
+[06/18 16:26:16.987586][info][41216][Pipeline.cpp:223] Check and set config done!
+[06/18 16:26:16.988195][info][41216][Pipeline.cpp:288] Try to start streams!
+[06/18 16:26:16.988220][info][41216][VideoSensor.cpp:646] start OB_SENSOR_COLOR stream with profile: {type: OB_STREAM_COLOR, format: OB_FORMAT_RGB888, width: 640, height: 480, fps: 30}, Backend Format: OB_FORMAT_MJPG
+[06/18 16:26:17.214050][info][41216][Pipeline.cpp:301] Start streams done!
+[06/18 16:26:17.214061][info][41216][Pipeline.cpp:277] Pipeline start done!
+[06/18 16:26:17.314708][warning][41216][Pipeline.cpp:377] Wait for frame timeout, you can try to increase the wait time! current timeout=100
+[06/18 16:26:17.809226][warning][41423][Pipeline.cpp:341] Pipeline source frameset queue fulled, drop the oldest frame!
+Traceback (most recent call last):
+  File "/home/ryu-yang/Works/Operating-Platform/operating_platform/robot/components/camera_rgbd_orbbec_v1/main.py", line 277, in <module>
+    main()
+  File "/home/ryu-yang/Works/Operating-Platform/operating_platform/robot/components/camera_rgbd_orbbec_v1/main.py", line 238, in main
+    depth_data = np.frombuffer(depth_frame.get_data(), dtype=np.uint16)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: ndarray is not C-contiguous
+[06/18 16:26:18.036464][info][41216][Pipeline.cpp:411] Try to stop pipeline!
+[06/18 16:26:18.036491][info][41216][Pipeline.cpp:383] Try to stop streams!
+[06/18 16:26:18.137142][warning][41410][OpenNIUSBLinux.cpp:244] Endpoint  0x81, Buffer45: Failed waiting on asynch transfer event:OB_EVENT_TIMEOUT
+[06/18 16:26:18.237398][warning][41410][OpenNIUSBLinux.cpp:244] Endpoint  0x81, Buffer34: Failed waiting on asynch transfer event:OB_EVENT_TIMEOUT
+[06/18 16:26:18.237432][warning][41410][OpenNIUSBLinux.cpp:203] exist(0) read thread(35)
+[06/18 16:26:18.237476][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237487][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237490][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237493][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237504][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237506][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237509][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237510][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237512][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237514][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237522][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237524][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237526][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237528][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237530][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237532][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237534][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237536][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237538][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237540][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237542][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237544][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237546][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237547][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237549][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237551][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237553][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237555][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237557][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237559][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237560][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237562][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237564][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237566][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237568][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237572][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237574][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237576][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237577][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237579][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237582][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237584][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237586][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237588][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237590][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237593][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237595][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237597][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237599][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237602][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237604][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237606][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237608][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237610][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237612][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237615][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237617][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237619][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237621][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237623][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237626][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237629][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237631][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.237633][warning][41216][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Resource temporarily unavailable, number:11 
+[06/18 16:26:18.249159][error][41216][OpenNIVideoSensor.cpp:692] OpenNI Depth  stream stop failed!
+[06/18 16:26:18.251347][error][41216][OpenNIVideoSensor.cpp:708] OpenNI Depth stream stop completed.
+[06/18 16:26:18.251373][info][41216][Pipeline.cpp:396] Sensor stream stopped, sensorType=OB_SENSOR_DEPTH
+[06/18 16:26:18.354004][info][41216][VideoSensor.cpp:734] Video sensor stopped, @OB_SENSOR_COLOR
+[06/18 16:26:18.354019][info][41216][Pipeline.cpp:396] Sensor stream stopped, sensorType=OB_SENSOR_COLOR
+[06/18 16:26:18.354022][info][41216][Pipeline.cpp:402] Stop streams done!
+[06/18 16:26:18.365281][info][41216][Pipeline.cpp:443] Stop pipeline done!
+[06/18 16:26:18.365291][info][41216][Pipeline.cpp:75] Pipeline destroyed! @0x2CED1830
+[06/18 16:26:18.365301][info][41216][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:26:18.365314][info][41216][VideoSensor.cpp:303] VideoSensor destroyed, @OB_SENSOR_COLOR
+[06/18 16:26:18.365321][info][41216][OpenNIVideoSensor.cpp:1020] OpenNIVideoSensor destroyed! sensorType=OB_SENSOR_DEPTH
+[06/18 16:26:18.368395][info][41216][ObLibuvcDevicePort.cpp:70] uvc_close done.
+[06/18 16:26:18.368409][info][41216][ObLibuvcDevicePort.cpp:71] ~ObLibuvcDevicePort done
+[06/18 16:26:18.369174][info][41216][Context.cpp:84] Context destroyed
+[06/18 16:26:18.369307][warning][41453][Pipeline.cpp:341] Pipeline source frameset queue fulled, drop the oldest frame! [**6 logs in 560ms, last: 16:26:18.009058**]

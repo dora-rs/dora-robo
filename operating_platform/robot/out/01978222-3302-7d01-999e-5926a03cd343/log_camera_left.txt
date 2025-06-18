@@ -1,0 +1,151 @@
+[06/18 16:22:49.573473][info][40032][Context.cpp:68] Context created with config: default config!
+[06/18 16:22:49.573484][info][40032][Context.cpp:73] Work directory=/home/ryu-yang/Works/Operating-Platform/operating_platform/robot, SDK version=v1.10.16-20241021-5113dad
+[06/18 16:22:49.573495][info][40032][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[06/18 16:22:49.744866][warning][40032][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:22:49.744871][warning][40032][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:22:49.744873][warning][40032][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:22:49.744926][info][40032][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[06/18 16:22:49.744937][info][40032][DeviceManager.cpp:15] Current found device(s): (3)
+[06/18 16:22:49.744940][info][40032][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:22:49.744941][info][40032][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:22:49.744943][info][40032][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:22:49.745007][error][40032][HandleLibusb.hpp:89] failed to claim usb interface: 0, error: OB_USB_STATUS_BUSY
+[06/18 16:22:49.746176][info][40032][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:22:49.747290][error][40032][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:22:49.754528][info][40032][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S74100MH
+[06/18 16:22:49.757093][info][40032][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:22:49.758279][info][40032][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:22:49.848390][info][40032][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:22:49.848456][info][40032][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:22:49.848588][info][40032][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:22:49.848592][info][40032][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:22:49.848597][info][40032][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:22:49.849207][info][40032][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:22:49.849671][error][40032][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:22:49.853317][info][40032][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S7410144
+[06/18 16:22:49.854343][info][40032][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:22:49.854844][info][40032][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:22:49.922493][info][40032][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:22:49.922553][info][40032][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:22:49.922689][info][40032][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:22:49.922693][info][40032][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S7410144
+[06/18 16:22:49.922700][info][40032][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:22:49.922716][info][40032][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:22:49.923451][info][40032][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:22:49.923927][error][40032][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:22:49.927550][info][40032][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S74100SZ
+[06/18 16:22:49.928577][info][40032][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:22:49.929046][info][40032][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:22:49.995788][info][40032][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:22:49.995844][info][40032][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:22:49.995964][info][40032][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:22:49.995968][info][40032][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S74100SZ
+[06/18 16:22:49.995974][info][40032][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:22:49.995991][info][40032][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S7410144
+[06/18 16:22:49.996117][warning][40032][ObException.cpp:5] Current device does not support frame sync!
+[06/18 16:22:49.996164][warning][40032][Pipeline.cpp:45] Execute failure! A libobsensor_exception has occurred!
+	 - where:45#Pipeline
+	 - msg:Current device does not support frame sync!
+	 - type:N11libobsensor31unsupported_operation_exceptionE
+[06/18 16:22:49.996167][info][40032][Pipeline.cpp:47] Pipeline created with device: {name: DaBai DC1, sn: CC1S74100SZ}, @0x1F1AE840
+[06/18 16:22:49.998484][info][40032][OpenNIDevice.cpp:632] Color sensor has been created!
+[06/18 16:22:49.998615][info][40032][OpenNIDevice.cpp:384] Depth sensor has been created!
+[06/18 16:22:49.998696][info][40032][Pipeline.cpp:188] Check and set config start!
+[06/18 16:22:49.998739][info][40032][Pipeline.cpp:223] Check and set config done!
+[06/18 16:22:49.999245][info][40032][Pipeline.cpp:288] Try to start streams!
+[06/18 16:22:49.999291][info][40032][VideoSensor.cpp:646] start OB_SENSOR_COLOR stream with profile: {type: OB_STREAM_COLOR, format: OB_FORMAT_RGB888, width: 640, height: 480, fps: 30}, Backend Format: OB_FORMAT_MJPG
+[06/18 16:22:50.228353][info][40032][Pipeline.cpp:301] Start streams done!
+[06/18 16:22:50.228362][info][40032][Pipeline.cpp:277] Pipeline start done!
+[06/18 16:22:50.329028][warning][40032][Pipeline.cpp:377] Wait for frame timeout, you can try to increase the wait time! current timeout=100
+[06/18 16:22:50.820955][warning][40255][Pipeline.cpp:341] Pipeline source frameset queue fulled, drop the oldest frame!
+Traceback (most recent call last):
+  File "/home/ryu-yang/Works/Operating-Platform/operating_platform/robot/components/camera_rgbd_orbbec_v1/main.py", line 277, in <module>
+    main()
+  File "/home/ryu-yang/Works/Operating-Platform/operating_platform/robot/components/camera_rgbd_orbbec_v1/main.py", line 238, in main
+    depth_data = np.frombuffer(depth_frame.get_data(), dtype=np.uint16)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: ndarray is not C-contiguous
+[06/18 16:22:51.577988][info][40032][Pipeline.cpp:411] Try to stop pipeline!
+[06/18 16:22:51.578021][info][40032][Pipeline.cpp:383] Try to stop streams!
+[06/18 16:22:51.679563][warning][40242][OpenNIUSBLinux.cpp:244] Endpoint  0x81, Buffer1: Failed waiting on asynch transfer event:OB_EVENT_TIMEOUT
+[06/18 16:22:51.779850][warning][40242][OpenNIUSBLinux.cpp:244] Endpoint  0x81, Buffer54: Failed waiting on asynch transfer event:OB_EVENT_TIMEOUT
+[06/18 16:22:51.779881][warning][40242][OpenNIUSBLinux.cpp:203] exist(0) read thread(55)
+[06/18 16:22:51.780008][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780022][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780026][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780028][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780040][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780043][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780045][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780047][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780049][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780051][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780054][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780062][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780064][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780066][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780069][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780071][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780074][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780075][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780078][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780080][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780082][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780084][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780086][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780088][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780091][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780093][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780095][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780097][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780099][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780102][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780104][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780106][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780108][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780110][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780112][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780114][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780117][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780119][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780121][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780123][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780126][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780129][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780132][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780134][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780136][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780138][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780141][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780143][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780145][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780147][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780149][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780151][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780153][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780155][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780157][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780159][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780161][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780163][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780165][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780167][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780171][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780173][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780175][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.780177][warning][40032][MessengerLibusb.cpp:82] usb_request_cancel returned error, endpoint:129, error:Success, number:0 
+[06/18 16:22:51.790974][error][40032][OpenNIVideoSensor.cpp:692] OpenNI Depth  stream stop failed!
+[06/18 16:22:51.792145][error][40032][OpenNIVideoSensor.cpp:708] OpenNI Depth stream stop completed.
+[06/18 16:22:51.792174][info][40032][Pipeline.cpp:396] Sensor stream stopped, sensorType=OB_SENSOR_DEPTH
+[06/18 16:22:51.900146][info][40032][VideoSensor.cpp:734] Video sensor stopped, @OB_SENSOR_COLOR
+[06/18 16:22:51.900151][info][40032][Pipeline.cpp:396] Sensor stream stopped, sensorType=OB_SENSOR_COLOR
+[06/18 16:22:51.900153][info][40032][Pipeline.cpp:402] Stop streams done!
+[06/18 16:22:51.911401][info][40032][Pipeline.cpp:443] Stop pipeline done!
+[06/18 16:22:51.911409][info][40032][Pipeline.cpp:75] Pipeline destroyed! @0x1F1AE840
+[06/18 16:22:51.911415][info][40032][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S74100SZ
+[06/18 16:22:51.911422][info][40032][VideoSensor.cpp:303] VideoSensor destroyed, @OB_SENSOR_COLOR
+[06/18 16:22:51.911429][info][40032][OpenNIVideoSensor.cpp:1020] OpenNIVideoSensor destroyed! sensorType=OB_SENSOR_DEPTH
+[06/18 16:22:51.914778][info][40032][ObLibuvcDevicePort.cpp:70] uvc_close done.
+[06/18 16:22:51.914792][info][40032][ObLibuvcDevicePort.cpp:71] ~ObLibuvcDevicePort done
+[06/18 16:22:51.915403][info][40032][Context.cpp:84] Context destroyed
+[06/18 16:22:51.915510][warning][40285][Pipeline.cpp:341] Pipeline source frameset queue fulled, drop the oldest frame! [**22 logs in 1094ms, last: 16:22:51.557080**]

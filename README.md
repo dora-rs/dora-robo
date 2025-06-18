@@ -1,18 +1,43 @@
 # Operating-Platform
 
-## make sure your camera id
+
+## Start
+
+get this project
 
 ```sh
-ls /dev/video* # ubuntu
+git cloen https://github.com/DoRobot-Project/Operating-Platform.git
+cd Operating-Platform
 ```
 
-## install
+creat conda env
 
 ```sh
-pip install flask
-pip install flask_cors
-pip install gevent
-pip install opencv-video-capture
-pip install dora-rs-cli
-pip install dora-rerun
+conda create --name op python==3.11
+```
+
+activate conda env
+
+```sh
+conda activate op
+```
+
+install `poetry`
+
+```sh
+# install
+curl -sSL https://install.python-poetry.org  | python3 -
+
+# update shell config
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# check
+poetry --version
+```
+
+install this project
+
+```sh
+poetry install
 ```

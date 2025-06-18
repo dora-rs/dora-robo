@@ -1,0 +1,58 @@
+[06/18 16:34:49.323161][info][42745][Context.cpp:68] Context created with config: default config!
+[06/18 16:34:49.323169][info][42745][Context.cpp:73] Work directory=/home/ryu-yang/Works/Operating-Platform/operating_platform/robot, SDK version=v1.10.16-20241021-5113dad
+[06/18 16:34:49.323181][info][42745][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[06/18 16:34:49.505740][warning][42745][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:34:49.505747][warning][42745][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:34:49.505749][warning][42745][OpenNIDeviceInfo.cpp:186] New openni device matched.
+[06/18 16:34:49.505826][info][42745][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[06/18 16:34:49.505838][info][42745][DeviceManager.cpp:15] Current found device(s): (3)
+[06/18 16:34:49.505840][info][42745][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:34:49.505842][info][42745][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:34:49.505843][info][42745][DeviceManager.cpp:24] 	- Name: DaBai DC1, PID: 0x0657, SN/ID: , Connection: USB2.0
+[06/18 16:34:49.506855][info][42745][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:34:49.507981][error][42745][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:34:49.511623][info][42745][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S74100MH
+[06/18 16:34:49.512654][info][42745][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:34:49.513132][info][42745][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:34:49.583625][info][42745][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:34:49.583686][info][42745][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:34:49.583877][info][42745][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:34:49.583888][info][42745][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:34:49.583894][info][42745][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:34:49.584507][info][42745][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:34:49.584989][error][42745][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:34:49.589473][info][42745][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S7410144
+[06/18 16:34:49.590463][info][42745][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:34:49.590934][info][42745][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:34:49.658346][info][42745][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:34:49.658403][info][42745][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:34:49.658533][info][42745][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:34:49.658538][info][42745][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S7410144
+[06/18 16:34:49.658543][info][42745][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:34:49.658560][info][42745][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S74100MH
+[06/18 16:34:49.659246][info][42745][OpenNIHostProtocol.cpp:567] Hardware versions: FW=5.8.23 (14), HW=0, Chip=7, Sensor=0, SYS=12
+[06/18 16:34:49.659752][error][42745][OpenNIHostProtocol.cpp:584] Get usb core type failed!
+[06/18 16:34:49.663390][info][42745][OpenNISensorFirmware.cpp:1190] Sensor serial number:CC1S74100SZ
+[06/18 16:34:49.664367][info][42745][OpenNISensorFirmware.cpp:1218] Firmware version RD1001
+[06/18 16:34:49.664815][info][42745][OpenNISensorFirmware.cpp:1224] Device frequency 31.25
+[06/18 16:34:49.732704][info][42745][OpenNISensorFirmware.cpp:150] OpenNI2 camera support Watchdog function.
+[06/18 16:34:49.732754][info][42745][AbstractDevice.cpp:125] 	- Firmware version: RD1001
+[06/18 16:34:49.732871][info][42745][OpenNIDevice.cpp:813] Init depth filter params.
+[06/18 16:34:49.732875][info][42745][OpenNIDevice.cpp:40] OpenNI device created! PID: 0x0657, SN: CC1S74100SZ
+[06/18 16:34:49.732880][info][42745][DeviceManager.cpp:150] Device created successfully! Name: DaBai DC1, PID: 0x0657, SN/ID: 
+[06/18 16:34:49.732893][info][42745][OpenNIDevice.cpp:44] OpenNI device destroyed! PID: 0x0657, SN: CC1S7410144
+[06/18 16:34:49.733005][warning][42745][ObException.cpp:5] Current device does not support frame sync!
+[06/18 16:34:49.733055][warning][42745][Pipeline.cpp:45] Execute failure! A libobsensor_exception has occurred!
+	 - where:45#Pipeline
+	 - msg:Current device does not support frame sync!
+	 - type:N11libobsensor31unsupported_operation_exceptionE
+[06/18 16:34:49.733058][info][42745][Pipeline.cpp:47] Pipeline created with device: {name: DaBai DC1, sn: CC1S74100SZ}, @0x1C942580
+[06/18 16:34:49.735292][info][42745][OpenNIDevice.cpp:632] Color sensor has been created!
+[06/18 16:34:49.735442][info][42745][OpenNIDevice.cpp:384] Depth sensor has been created!
+[06/18 16:34:49.735561][info][42745][Pipeline.cpp:188] Check and set config start!
+[06/18 16:34:49.735673][info][42745][Pipeline.cpp:223] Check and set config done!
+[06/18 16:34:49.736215][info][42745][Pipeline.cpp:288] Try to start streams!
+[06/18 16:34:49.736239][info][42745][VideoSensor.cpp:646] start OB_SENSOR_COLOR stream with profile: {type: OB_STREAM_COLOR, format: OB_FORMAT_RGB888, width: 640, height: 480, fps: 30}, Backend Format: OB_FORMAT_MJPG
+[06/18 16:34:49.965040][info][42745][Pipeline.cpp:301] Start streams done!
+[06/18 16:34:49.965047][info][42745][Pipeline.cpp:277] Pipeline start done!
+[06/18 16:34:50.065684][warning][42745][Pipeline.cpp:377] Wait for frame timeout, you can try to increase the wait time! current timeout=100
