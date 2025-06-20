@@ -451,18 +451,18 @@ def control_loop(
             frame = {**observation, **action, "task": single_task}
             dataset.add_frame(frame)
 
-        # # print("after dataset ")
-        cv2_display_start_t = time.perf_counter()
-        # keboard_key = 0
-        if display_cameras and not is_headless():
-            image_keys = [key for key in observation if "image" in key]
-            for i, key in enumerate(image_keys, start=1):
-                cv2.imshow(key, observation[key].numpy())
-        cv2.waitKey(1)
-        cv_display_dt_s = time.perf_counter() - cv2_display_start_t
-        print(f"cv_display_dt_s = {cv_display_dt_s}")
+        print("after dataset ")
+        # cv2_display_start_t = time.perf_counter()
+        # # keboard_key = 0
+        # if display_cameras and not is_headless():
+        #     image_keys = [key for key in observation if "image" in key]
+        #     for i, key in enumerate(image_keys, start=1):
+        #         cv2.imshow(key, observation[key].numpy())
+        # cv2.waitKey(1)
+        # cv_display_dt_s = time.perf_counter() - cv2_display_start_t
+        # print(f"cv_display_dt_s = {cv_display_dt_s}")
 
-        # print("after display_cameras ")
+        print("after display_cameras ")
         if fps is not None:
             dt_s = time.perf_counter() - start_loop_t
             busy_wait(1 / fps - dt_s)

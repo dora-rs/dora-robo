@@ -24,7 +24,7 @@ dependencies = [
     "tensorflow (>=2.19.0,<3.0.0)",
     "tensorflow-datasets (>=4.9.9,<5.0.0)",
     "draccus (>=0.11.5,<0.12.0)",
-    "flask (>=3.0.1,<4.0.0)",
+    "flask ==3.0.3",
     "deepdiff (>=8.5.0,<9.0.0)",
     "zarr (>=3.0.8,<4.0.0)",
     "numba (>=0.61.2,<0.62.0)",

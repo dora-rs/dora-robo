@@ -157,8 +157,10 @@ class RobotClient:
             # 发送响应
             self.send_response('submit_collection', "success")
     
+
+    # 心跳包二次回复请求
     def send_response(self, cmd, msg, data=None):
-        """发送响应到服务器"""
+        """发送心跳包二次回复请求到服务器"""
         try:
             payload = {"cmd": cmd, "msg": msg}
             if data:
