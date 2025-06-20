@@ -12,17 +12,26 @@ class RobotClient:
         self.last_heartbeat_time = 0
         self.heartbeat_interval = 2  # 心跳间隔(秒)
         self.session = requests.Session()
+        self.msg = {}
         
         # 注册事件处理
         self.sio.on('connect', self.on_connect)
         self.sio.on('HEARTBEAT_RESPONSE', self.on_heartbeat_response)
         self.sio.on('robot_command', self.on_robot_command)
         self.sio.on('disconnect', self.on_disconnect)
+        self.sio.on('reconnect', self.on_reconnect)
+        self.sio.on('reconnect_attempt', self.on_reconnect_attempt)
+        self.sio.on('reconnect_error', self.on_reconnect_error)
+        self.sio.on('reconnect_failed', self.on_reconnect_failed)
     
     def start(self):
         """启动客户端"""
         self.running = True
-        self.sio.connect(self.server_url)
+        try:
+            self.sio.connect(self.server_url, namespaces=['/'], transports=['websocket'])
+        except Exception as e:
+            print(f"连接失败: {e}")
+            return
         
         # 启动心跳线程
         heartbeat_thread = threading.Thread(target=self.send_heartbeat)
@@ -44,7 +53,7 @@ class RobotClient:
             current_time = time.time()
             if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
                 try:
-                    self.sio.emit('HEARTBEAT')
+                    self.sio.emit('HEARTBEAT', namespace='/')
                     self.last_heartbeat_time = current_time
                 except Exception as e:
                     print(f"发送心跳失败: {e}")
@@ -59,11 +68,22 @@ class RobotClient:
             response = self.session.post(
                 f"{self.server_url}/robot/stream_info",
                 json={
-                    "streams": [
-                        {"id": 1, "name": "摄像头1"},
-                        {"id": 2, "name": "摄像头2"}
-                    ]
-                }
+                "total": 3,
+                "streams": [
+                    {
+                        "id": 1,
+                        "name": "头部"
+                    },
+                    {
+                        "id": 2,
+                        "name": "手部-左"
+                    },
+                    {
+                        "id": 3,
+                        "name": "手部-右"
+                    }
+                ]
+            }
             )
             print("初始化视频流列表:", response.json())
         except Exception as e:
@@ -110,6 +130,7 @@ class RobotClient:
                 print(f"发送响应失败 [{data.get('cmd')}]: {e}")
             
         elif data.get('cmd') == 'start_collection':
+            self.msg = data.get('msg')
             # 模拟处理开始采集
             print("处理开始采集命令...")
             time.sleep(0.01)  # 模拟处理时间
@@ -121,14 +142,14 @@ class RobotClient:
             # 模拟处理完成采集
             print("处理完成采集命令...")
             time.sleep(0.01)  # 模拟处理时间
-            
+            file_name = self.msg["task_name"] + "_" +self.msg["task_id"] + "_" + self.msg["task_data_id"]
             # 准备响应数据
             response_data = {
                 "msg": "success",
                 "data": {
                     "file_message": {
-                        "file_name": "叠衣服001001",
-                        "file_local_path": "/home/agilex/data/叠衣服001001",
+                        "file_name": file_name,
+                        "file_local_path": "/home/agilex/data/" + file_name,
                         "file_size": "3.2",
                         "file_duration": "30"
                     },
@@ -175,6 +196,22 @@ class RobotClient:
     def on_disconnect(self):
         """断开连接回调"""
         print("与服务器断开连接")
+
+    def on_reconnect(self):
+        """重连成功回调"""
+        print("成功重连到服务器")
+
+    def on_reconnect_attempt(self):
+        """尝试重连回调"""
+        print("尝试重连到服务器...")
+
+    def on_reconnect_error(self, error):
+        """重连错误回调"""
+        print(f"重连错误: {error}")
+
+    def on_reconnect_failed(self):
+        """重连失败回调"""
+        print("重连失败")
 
 if __name__ == '__main__':
     client = RobotClient()
