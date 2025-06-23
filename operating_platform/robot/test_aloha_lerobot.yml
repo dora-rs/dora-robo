@@ -43,26 +43,26 @@ nodes:
       image_left: camera_left/image
       image_depth_left: camera_left/image_depth
 
-  - id: rerun
-    path: dora-rerun
-    inputs:
-      image_top: 
-        source: camera_top/image
-        queue_size: 1
-      image_depth_top:
-        source: camera_top/image_depth
-        queue_size: 1
-      image_right:
-        source: camera_right/image
-        queue_size: 1
-      image_depth_right:
-        source: camera_right/image_depth
-        queue_size: 1
-      image_left:
-        source: camera_left/image
-        queue_size: 1
-      image_depth_left:
-        source: camera_left/image_depth
-        queue_size: 1
-    env:
-      RERUN_MEMORY_LIMIT: 25%
+  # - id: rerun
+  #   path: dora-rerun
+  #   inputs:
+  #     image_top: 
+  #       source: camera_top/image
+  #       queue_size: 1
+  #     image_depth_top:
+  #       source: camera_top/image_depth
+  #       queue_size: 1
+  #     image_right:
+  #       source: camera_right/image
+  #       queue_size: 1
+  #     image_depth_right:
+  #       source: camera_right/image_depth
+  #       queue_size: 1
+  #     image_left:
+  #       source: camera_left/image
+  #       queue_size: 1
+  #     image_depth_left:
+  #       source: camera_left/image_depth
+  #       queue_size: 1
+  #   env:
+  #     RERUN_MEMORY_LIMIT: 25%

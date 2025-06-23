@@ -3,7 +3,7 @@ python operating_platform/coordinator/test.py \
   --control.type=record \
   --control.fps=10 \
   --control.single_task="Grasp a lego block and put it in the bin." \
-  --control.repo_id=xymit/aloha_test \
+  --control.repo_id=xymit/aloha_test_1 \
   --control.tags='["aloha","tutorial"]' \
   --control.warmup_time_s=240 \
   --control.episode_time_s=240 \

@@ -65,6 +65,7 @@ def recv_server():
             
             if frame is not None:
                 with lock:
+                    # print(f"Received event_id = {event_id}")
                     recv_images[event_id] = frame
         except zmq.Again:
             # 接收超时，继续循环
@@ -480,6 +481,8 @@ class AlohaManipulator:
         #     self.cameras[name].disconnect()
 
         self.is_connected = False
+        running_server = False
+        
 
     def __del__(self):
         if getattr(self, "is_connected", False):
