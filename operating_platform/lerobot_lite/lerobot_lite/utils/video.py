@@ -36,8 +36,9 @@ def get_available_encoders():
     获取当前系统中 ffmpeg 支持的视频编码器列表。
     """
     try:
+        # 执行 ffmpeg -encoders 命令
         result = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-encoders"],
+            ["ffmpeg", "-encoders"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -45,12 +46,31 @@ def get_available_encoders():
         )
         output = result.stdout
 
-        # 提取所有以 V 开头的编码器（表示视频编码器）
+        # # 调试：打印完整输出
+        # print("ffmpeg output:")
+        # print(output)
+
         encoders = set()
+        in_encoders = False
+
         for line in output.splitlines():
-            match = re.match(r"\s*V\.\.\.\.\.\.\s+(\S+)", line)
+            line = line.strip()
+
+            # 检测到 Encoders: 行，开始解析编码器
+            if line == "Encoders:":
+                in_encoders = True
+                continue
+
+            if not in_encoders:
+                continue
+
+            # 匹配视频编码器行：V + 5个非空白字符 + 空格 + 编码器名称
+            match = re.match(r"^\s*V\S{5}\s+(\S+)", line)
             if match:
                 encoders.add(match.group(1))
+
+        print(f"Get ffmpeg encoders: {encoders}")
+
         return encoders
 
     except (subprocess.CalledProcessError, FileNotFoundError):
