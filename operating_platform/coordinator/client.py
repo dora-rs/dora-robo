@@ -182,6 +182,14 @@ class RobotClient:
     def stream_info(self, info: dict[str, int]):
         self.cameras = info.copy()
 
+    def update_stream_info_to_server(self):
+        response_data = cameras_to_stream_json(self.cameras)
+
+        response = self.session.post(
+            f"{self.server_url}/robot/stream_info",
+            json = response_data,
+        )
+
     def update_stream(self, name, frame):
         frame_data = frame.tobytes()
 

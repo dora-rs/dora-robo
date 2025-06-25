@@ -524,7 +524,7 @@ def main(cfg: ControlPipelineConfig):
     for name, camera in robot.cameras.items():
         cameras[name] = camera.camera_index
     robot_client.stream_info(cameras)
-
+    robot_client.update_stream_info_to_server()
 
     if isinstance(cfg.control, TeleoperateControlConfig):
         teleoperate(robot, cfg.control)

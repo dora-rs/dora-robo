@@ -10,7 +10,7 @@ import logging
 from gevent import monkey
 
 
-# 模拟视频源配置（仅用于标识）
+# 视频源配置
 VIDEO_SOURCES = {
     "camera_1": 6,
     "camera_2": 0,
@@ -95,6 +95,72 @@ def system_info():
         "total_streams": len(stream_status),
         "timestamp": time.time(),
         "streams": stream_status
+    })
+
+@app.route('/api/stream_info', methods=['POST'])
+def update_streams():
+    """更新可用视频流列表"""
+
+    # 解析并验证传入数据
+    data = request.get_json()
+    if not data or 'streams' not in data:
+        return jsonify({"error": "Invalid data format"}), 400
+
+    incoming_streams = data['streams']
+
+    # 获取当前视频源配置（如摄像头索引）
+    current_sources = VIDEO_SOURCES
+
+    # 构建新流与旧流的对比逻辑
+    new_stream_ids = {stream["id"] for stream in incoming_streams}
+    current_stream_ids = set(video_streams.keys())
+
+    to_remove = current_stream_ids - new_stream_ids
+    to_add = new_stream_ids - current_stream_ids
+
+    # 停止不再需要的流
+    for stream_id in to_remove:
+        video_streams[stream_id].stop()
+        del video_streams[stream_id]
+        del stream_status[stream_id]
+
+    # 添加新流（根据VIDEO_SOURCES配置）
+    success = []
+    failed = []
+
+    for stream in incoming_streams:
+        stream_id = stream["id"]
+        name = stream["name"]
+
+        if stream_id in video_streams:
+            continue  # 已存在，跳过
+
+        # 获取对应的摄像头源
+        source_key = f"camera_{stream_id}"
+        if source_key not in current_sources:
+            failed.append(stream_id)
+            continue
+
+        source = current_sources[source_key]
+        vs = VideoStream(stream_id, source)
+
+        if vs.start():
+            video_streams[stream_id] = vs
+            stream_status[stream_id] = {
+                "id": stream_id,
+                "name": name,
+                "active": True,
+                "source": source
+            }
+            success.append(stream_id)
+        else:
+            failed.append(stream_id)
+
+    return jsonify({
+        "success": success,
+        "failed": failed,
+        "total": len(success),
+        "timestamp": time.time()
     })
 
 @app.route('/api/stream_info', methods=['GET'])
