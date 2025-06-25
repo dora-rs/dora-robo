@@ -3,6 +3,7 @@ import time
 import threading
 import requests
 import json
+import cv2
 
 def cameras_to_stream_json(cameras: dict[str, int]):
     """
@@ -19,10 +20,10 @@ def cameras_to_stream_json(cameras: dict[str, int]):
         "total": len(stream_list),
         "streams": stream_list
     }
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result)
 
 class RobotClient:
-    def __init__(self, server_url="http://localhost:8080"):
+    def __init__(self, server_url="http://localhost:7080"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
@@ -181,17 +182,22 @@ class RobotClient:
 ####################### Robot API ############################
     def stream_info(self, info: dict[str, int]):
         self.cameras = info.copy()
+        print(f"更新摄像头信息: {self.cameras}")
 
     def update_stream_info_to_server(self):
-        response_data = cameras_to_stream_json(self.cameras)
+        stream_info_data = cameras_to_stream_json(self.cameras)
+        print(f"stream_info_data: {stream_info_data}")
 
         response = self.session.post(
             f"{self.server_url}/robot/stream_info",
-            json = response_data,
+            json = stream_info_data,
         )
 
     def update_stream(self, name, frame):
-        frame_data = frame.tobytes()
+
+        _, jpeg_frame = cv2.imencode('.jpg', frame, 
+                            [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        frame_data = jpeg_frame.tobytes()
 
         stream_id = self.cameras[name]
         # Build URL

@@ -460,8 +460,8 @@ def control_loop(
         if display_cameras and not is_headless():
             image_keys = [key for key in observation if "image" in key]
             for i, key in enumerate(image_keys, start=1):
-                cv2.imshow(key, observation[key].numpy())
-                cv2.waitKey(10)
+                # cv2.imshow(key, observation[key].numpy())
+                # cv2.waitKey(10)
                 name = key[len("observation.images."):]
                 robot_client.update_stream(name, observation[key].numpy())
         
@@ -519,7 +519,7 @@ def main(cfg: ControlPipelineConfig):
     logging.info(pformat(asdict(cfg)))
     
     robot = make_robot_from_config(cfg.robot)
-    robot_client.start()
+    # robot_client.start()
     cameras = {}
     for name, camera in robot.cameras.items():
         cameras[name] = camera.camera_index

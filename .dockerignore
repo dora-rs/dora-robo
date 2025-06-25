@@ -15,7 +15,7 @@
 *.bin
 
 # ===== 版本控制 & IDE =====
-.git/
+; .git/
 .svn/
 **/.idea/
 **/.vscode/
