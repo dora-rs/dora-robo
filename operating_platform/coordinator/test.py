@@ -17,7 +17,10 @@ from lerobot_lite.utils.robot_devices import busy_wait, safe_disconnect
 from lerobot_lite.utils.utils import has_method, init_logging, log_say
 from lerobot_lite.robots.utils import make_robot_from_config, Robot
 
+from client import RobotClient
 
+
+robot_client = RobotClient()
 
 @dataclass
 class ControlConfig(draccus.ChoiceRegistry):
@@ -362,11 +365,11 @@ def record(
         if not events["stop_recording"] and (
             (recorded_episodes < record_cfg.num_episodes - 1) or events["rerecord_episode"]
         ):
-            log_say("Reset the environment", record_cfg.play_sounds)
+            # log_say("Reset the environment", record_cfg.play_sounds)
             reset_environment(robot, events, record_cfg.reset_time_s, record_cfg.fps)
 
         if events["rerecord_episode"]:
-            log_say("Re-record episode", record_cfg.play_sounds)
+            # log_say("Re-record episode", record_cfg.play_sounds)
             events["rerecord_episode"] = False
             events["exit_early"] = False
             dataset.clear_episode_buffer()
@@ -378,13 +381,13 @@ def record(
         if events["stop_recording"]:
             break
 
-    log_say("Stop recording", record_cfg.play_sounds, blocking=True)
+    # log_say("Stop recording", record_cfg.play_sounds, blocking=True)
     stop_recording(robot, listener, record_cfg.display_cameras)
 
     if record_cfg.push_to_hub:
         dataset.push_to_hub(tags=record_cfg.tags, private=record_cfg.private)
 
-    log_say("Exiting", record_cfg.play_sounds)
+    # log_say("Exiting", record_cfg.play_sounds)
     return dataset
 
 # @safe_stop_image_writer
@@ -458,7 +461,10 @@ def control_loop(
             image_keys = [key for key in observation if "image" in key]
             for i, key in enumerate(image_keys, start=1):
                 cv2.imshow(key, observation[key].numpy())
-        cv2.waitKey(1)
+                cv2.waitKey(10)
+                name = key[len("observation.images."):]
+                robot_client.update_stream(name, observation[key].numpy())
+        
         cv_display_dt_s = time.perf_counter() - cv2_display_start_t
         print(f"cv_display_dt_s = {cv_display_dt_s}")
 
@@ -511,13 +517,23 @@ def stop_recording(robot, listener, display_cameras):
 def main(cfg: ControlPipelineConfig):
     init_logging()
     logging.info(pformat(asdict(cfg)))
-
+    
     robot = make_robot_from_config(cfg.robot)
+    robot_client.start()
+    cameras = {}
+    for name, camera in robot.cameras.items():
+        cameras[name] = camera.camera_index
+    robot_client.stream_info(cameras)
+
 
     if isinstance(cfg.control, TeleoperateControlConfig):
         teleoperate(robot, cfg.control)
     elif isinstance(cfg.control, RecordControlConfig):
         record(robot, cfg.control)
+
+    robot_client.stop()
+
+    
 
 
 if __name__ == "__main__":

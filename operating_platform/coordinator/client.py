@@ -4,21 +4,45 @@ import threading
 import requests
 import json
 
+def cameras_to_stream_json(cameras: dict[str, int]):
+    """
+    将摄像头字典转换为包含流信息的 JSON 字符串。
+    
+    参数:
+        cameras (dict[str, int]): 摄像头名称到 ID 的映射
+    
+    返回:
+        str: 格式化的 JSON 字符串
+    """
+    stream_list = [{"id": cam_id, "name": name} for name, cam_id in cameras.items()]
+    result = {
+        "total": len(stream_list),
+        "streams": stream_list
+    }
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
 class RobotClient:
     def __init__(self, server_url="http://localhost:8080"):
         self.server_url = server_url
         self.sio = socketio.Client()
+        self.session = requests.Session()
+
         self.running = False
         self.last_heartbeat_time = 0
         self.heartbeat_interval = 2  # 心跳间隔(秒)
-        self.session = requests.Session()
+
+        self.cameras: dict[str, int] = {
+            "image_top": 1,
+            "image_depth_top": 2,
+        } # Default Config
         
         # 注册事件处理
-        self.sio.on('connect', self.on_connect)
-        self.sio.on('HEARTBEAT_RESPONSE', self.on_heartbeat_response)
-        self.sio.on('robot_command', self.on_robot_command)
-        self.sio.on('disconnect', self.on_disconnect)
+        self.sio.on('HEARTBEAT_RESPONSE', self.__on_heartbeat_response_handle)
+        self.sio.on('connect', self.__on_connect_handle)
+        self.sio.on('disconnect', self.__on_disconnect_handle)
+        self.sio.on('robot_command', self.__on_robot_command_handle)
     
+####################### Client Start/Stop ############################
     def start(self):
         """启动客户端"""
         self.running = True
@@ -38,81 +62,49 @@ class RobotClient:
         self.sio.disconnect()
         print("客户端已停止")
     
-    def send_heartbeat(self):
-        """定期发送心跳"""
-        while self.running:
-            current_time = time.time()
-            if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
-                try:
-                    self.sio.emit('HEARTBEAT')
-                    self.last_heartbeat_time = current_time
-                except Exception as e:
-                    print(f"发送心跳失败: {e}")
-            time.sleep(0.1)
-    
-    def on_connect(self):
-        """连接成功回调"""
-        print("成功连接到服务器")
-        
-        # 初始化视频流列表
-        try:
-            response = self.session.post(
-                f"{self.server_url}/robot/stream_info",
-                json={
-                    "streams": [
-                        {"id": 1, "name": "摄像头1"},
-                        {"id": 2, "name": "摄像头2"}
-                    ]
-                }
-            )
-            print("初始化视频流列表:", response.json())
-        except Exception as e:
-            print(f"初始化视频流列表失败: {e}")
-    
-    def on_heartbeat_response(self, data):
+####################### Client Handle ############################
+    def __on_heartbeat_response_handle(self, data):
         """心跳响应回调"""
         print("收到心跳响应:", data)
     
-    def on_robot_command(self, data):
+    def __on_connect_handle(self):
+        """连接成功回调"""
+        print("成功连接到服务器")
+        
+        # # 初始化视频流列表
+        # try:
+        #     response = self.session.post(
+        #         f"{self.server_url}/robot/stream_info",
+        #         json = cameras_to_stream_json(self.cameras),
+        #     )
+        #     print("初始化视频流列表:", response.json())
+        # except Exception as e:
+        #     print(f"初始化视频流列表失败: {e}")
+    
+    def __on_disconnect_handle(self):
+        """断开连接回调"""
+        print("与服务器断开连接")
+    
+    def __on_robot_command_handle(self, data):
         """收到机器人命令回调"""
         print("收到服务器命令:", data)
         
         # 根据命令类型进行响应
         if data.get('cmd') == 'video_list':
-            # 模拟视频流列表
             print("处理更新视频流命令...")
-            time.sleep(0.01)  # 模拟处理时间
-            response_data = {
-                "total": 3,
-                "streams": [
-                    {
-                        "id": 1,
-                        "name": "头部"
-                    },
-                    {
-                        "id": 2,
-                        "name": "手部-左"
-                    },
-                    {
-                        "id": 3,
-                        "name": "手部-右"
-                    }
-                ]
-            }
+            response_data = cameras_to_stream_json(self.cameras)
             # 发送响应
-            try:         
+            try:
                 response = self.session.post(
                     f"{self.server_url}/robot/stream_info",
-                    json=response_data
+                    json = response_data,
                 )
                 print(f"已发送响应 [{data.get('cmd')}]: {response_data}")
             except Exception as e:
                 print(f"发送响应失败 [{data.get('cmd')}]: {e}")
             
         elif data.get('cmd') == 'start_collection':
-            # 模拟处理开始采集
             print("处理开始采集命令...")
-            time.sleep(0.01)  # 模拟处理时间
             
             # 发送响应
             self.send_response('start_collection', "success")
@@ -157,6 +149,18 @@ class RobotClient:
             # 发送响应
             self.send_response('submit_collection', "success")
     
+####################### Client Send to Server ############################
+    def send_heartbeat(self):
+        """定期发送心跳"""
+        while self.running:
+            current_time = time.time()
+            if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
+                try:
+                    self.sio.emit('HEARTBEAT')
+                    self.last_heartbeat_time = current_time
+                except Exception as e:
+                    print(f"发送心跳失败: {e}")
+            time.sleep(1)
 
     # 心跳包二次回复请求
     def send_response(self, cmd, msg, data=None):
@@ -173,15 +177,31 @@ class RobotClient:
             print(f"已发送响应 [{cmd}]: {payload}")
         except Exception as e:
             print(f"发送响应失败 [{cmd}]: {e}")
-    
-    def on_disconnect(self):
-        """断开连接回调"""
-        print("与服务器断开连接")
 
-if __name__ == '__main__':
-    client = RobotClient()
+####################### Robot API ############################
+    def stream_info(self, info: dict[str, int]):
+        self.cameras = info.copy()
+
+    def update_stream(self, name, frame):
+        frame_data = frame.tobytes()
+
+        stream_id = self.cameras[name]
+        # Build URL
+        url = f"{self.server_url}/api/update_stream/{stream_id}"
+
+        # Send POST request
+        try:
+            response = self.session.post(url, data=frame_data)
+            if response.status_code != 200:
+                print(f"Server returned error: {response.status_code}, {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}")
+
+
+# if __name__ == '__main__':
+#     client = RobotClient()
     
-    try:
-        client.start()
-    except KeyboardInterrupt:
-        client.stop()
+#     try:
+#         client.start()
+#     except KeyboardInterrupt:
+#         client.stop()
