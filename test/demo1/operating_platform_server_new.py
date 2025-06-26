@@ -228,7 +228,7 @@ def stream_video(stream_id):
     return Response(generate(),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/api/update_stream/<int:stream_id>', methods=['POST'])
+@app.route('/robot/update_stream/<int:stream_id>', methods=['POST'])
 def update_frame(stream_id):
     """更新视频流帧数据"""
     stream = stream_manager.get_stream(stream_id)

@@ -16,6 +16,8 @@ pynput = ">=1.8.1,<2.0.0"
 lerobot-lite = { path = "operating_platform/lerobot_lite", develop = true }
 opencv-python = "^4.11.0.86"
 python-socketio = "^5.13.0"
+websocket-client = "^1.8.0"
+schedule = "^1.2.2"
 
 
 [build-system]

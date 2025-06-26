@@ -23,7 +23,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     return json.dumps(result)
 
 class RobotClient:
-    def __init__(self, server_url="http://localhost:7080"):
+    def __init__(self, server_url="http://localhost:8080"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
@@ -54,8 +54,7 @@ class RobotClient:
         heartbeat_thread.daemon = True
         heartbeat_thread.start()
         
-        print("客户端已启动，等待连接...")
-        self.sio.wait()
+        # print("客户端已启动，等待连接...")
     
     def stop(self):
         """停止客户端"""
@@ -162,6 +161,8 @@ class RobotClient:
                 except Exception as e:
                     print(f"发送心跳失败: {e}")
             time.sleep(1)
+            self.sio.wait()
+         
 
     # 心跳包二次回复请求
     def send_response(self, cmd, msg, data=None):
@@ -201,7 +202,7 @@ class RobotClient:
 
         stream_id = self.cameras[name]
         # Build URL
-        url = f"{self.server_url}/api/update_stream/{stream_id}"
+        url = f"{self.server_url}/robot/update_stream/{stream_id}"
 
         # Send POST request
         try:
