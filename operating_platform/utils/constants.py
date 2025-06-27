@@ -22,7 +22,6 @@ SCHEDULER_STATE = "scheduler_state.json"
 
 DOROBOT_HOME = Path(os.getenv("DOROBOT_HOME", "~/DoRobot")).expanduser().resolve()
 
-logger = logging.getLogger(__name__)
 
 if "DOROBOT_HOME" not in os.environ:
     logging.info(f"Environment variable 'DOROBOT_HOME' not set. Using default path: {DOROBOT_HOME}")
@@ -31,6 +30,6 @@ else:
 
 if not DOROBOT_HOME.exists():
     DOROBOT_HOME.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Created directory: {DOROBOT_HOME}")
+    logging.info(f"Created directory: {DOROBOT_HOME}")
 
 DOROBOT_DATASET = DOROBOT_HOME / "dataset"

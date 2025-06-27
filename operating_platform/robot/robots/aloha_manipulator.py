@@ -13,23 +13,18 @@ import torch
 from concurrent.futures import ThreadPoolExecutor
 from collections import deque
 from functools import cache
-import traceback
-import logging
 
 import threading
 import cv2
 
 import zmq
 
-from lerobot_lite.utils.camera import Camera, make_cameras_from_configs
 
-from lerobot_lite.utils.robot_devices import RobotDeviceAlreadyConnectedError, RobotDeviceNotConnectedError
+from operating_platform.robot.robots.utils import RobotDeviceNotConnectedError
+from operating_platform.robot.robots.configs import AlohaRobotConfig
+from operating_platform.robot.robots.com_configs.cameras import CameraConfig, OpenCVCameraConfig
 
-from lerobot_lite.robots.configs import AdoraDualRobotConfig
-
-
-from lerobot_lite.configs.cameras import CameraConfig, OpenCVCameraConfig
-
+from operating_platform.robot.robots.camera import Camera
 
 
 
@@ -121,7 +116,7 @@ def make_cameras_from_configs(camera_configs: dict[str, CameraConfig]) -> list[C
 
 
 class AlohaManipulator:
-    def __init__(self, config: AdoraDualRobotConfig):
+    def __init__(self, config: AlohaRobotConfig):
         self.config = config
         self.robot_type = self.config.type
 

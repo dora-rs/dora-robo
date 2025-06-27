@@ -22,7 +22,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     }
     return json.dumps(result)
 
-class RobotClient:
+class Coordinator:
     def __init__(self, server_url="http://localhost:8080"):
         self.server_url = server_url
         self.sio = socketio.Client()
@@ -162,7 +162,6 @@ class RobotClient:
                     print(f"发送心跳失败: {e}")
             time.sleep(1)
             self.sio.wait()
-         
 
     # 心跳包二次回复请求
     def send_response(self, cmd, msg, data=None):
