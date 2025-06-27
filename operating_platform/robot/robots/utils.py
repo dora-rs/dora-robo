@@ -14,7 +14,7 @@
 
 from typing import Protocol
 
-from lerobot_lite.robots.configs import (
+from operating_platform.robot.robots.configs import (
     AlohaRobotConfig,
     ManipulatorRobotConfig,
     RobotConfig,
@@ -60,11 +60,11 @@ def make_robot_config(robot_type: str, **kwargs) -> RobotConfig:
 def make_robot_from_config(config: RobotConfig):
 
     if isinstance(config, AdoraRobotConfig):
-        from lerobot_lite.robots.adora_manipulator import AdoraManipulator
+        from operating_platform.robot.robots.adora_manipulator import AdoraManipulator
         print("In AdoraRobotConfig")
         return AdoraManipulator(config)
     elif isinstance(config, AlohaRobotConfig):
-        from lerobot_lite.robots.aloha_manipulator import AlohaManipulator
+        from operating_platform.robot.robots.aloha_manipulator import AlohaManipulator
         print("In AlohaManipulator")
         return AlohaManipulator(config)
     

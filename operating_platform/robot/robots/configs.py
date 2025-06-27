@@ -18,12 +18,13 @@ from typing import Sequence
 
 import draccus
 
-from lerobot_lite.configs.cameras import (
+from operating_platform.robot.robots.com_configs.cameras import (
     CameraConfig,
     IntelRealSenseCameraConfig,
     OpenCVCameraConfig,
 )
-from lerobot_lite.configs.motors import (
+
+from operating_platform.robot.robots.com_configs.motors import (
     DynamixelMotorsBusConfig,
     FeetechMotorsBusConfig,
     MotorsBusConfig,

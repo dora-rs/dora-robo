@@ -25,9 +25,9 @@ DOROBOT_HOME = Path(os.getenv("DOROBOT_HOME", "~/DoRobot")).expanduser().resolve
 logger = logging.getLogger(__name__)
 
 if "DOROBOT_HOME" not in os.environ:
-    logger.info(f"Environment variable 'DOROBOT_HOME' not set. Using default path: {DOROBOT_HOME}")
+    logging.info(f"Environment variable 'DOROBOT_HOME' not set. Using default path: {DOROBOT_HOME}")
 else:
-    logger.info(f"Environment variable 'DOROBOT_HOME' is set to: {DOROBOT_HOME}")
+    logging.info(f"Environment variable 'DOROBOT_HOME' is set to: {DOROBOT_HOME}")
 
 if not DOROBOT_HOME.exists():
     DOROBOT_HOME.mkdir(parents=True, exist_ok=True)

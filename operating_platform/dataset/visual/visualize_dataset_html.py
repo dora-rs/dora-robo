@@ -1,19 +1,4 @@
-#!/usr/bin/env python
-
-# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-""" Visualize data of **all** frames of any episode of a dataset of type LeRobotDataset.
+""" Visualize data of **all** frames of any episode of a dataset of type DoRobotDataset or LeRobotDataset.
 
 Note: The last frame of the episode doesnt always correspond to a final state.
 That's because our datasets are composed of transition from state to state up to
@@ -29,26 +14,8 @@ Example of usage:
 
 - Visualize data stored on a local machine:
 ```bash
-local$ python lerobot/scripts/visualize_dataset_html.py \
+local$ python operating_platform/dataset/visual/visualize_dataset_html.py \
     --repo-id lerobot/pusht
-
-local$ open http://localhost:9090
-```
-
-- Visualize data stored on a distant machine with a local viewer:
-```bash
-distant$ python lerobot/scripts/visualize_dataset_html.py \
-    --repo-id lerobot/pusht
-
-local$ ssh -L 9090:localhost:9090 distant  # create a ssh tunnel
-local$ open http://localhost:9090
-```
-
-- Select episodes to visualize:
-```bash
-python lerobot/scripts/visualize_dataset_html.py \
-    --repo-id lerobot/pusht \
-    --episodes 7 3 5 1 4
 ```
 """
 
@@ -67,14 +34,14 @@ import pandas as pd
 import requests
 from flask import Flask, redirect, render_template, request, url_for
 
-from lerobot_lite.datasets.lerobot_dataset import DoRobotDataset
-from lerobot_lite.utils.dataset import IterableNamespace
+from operating_platform.dataset.dorobot_dataset import DoRobotDataset
+from operating_platform.utils.dataset import IterableNamespace
 from operating_platform.utils.utils import init_logging
 
 
 
 def run_server(
-    dataset: LeRobotDataset | IterableNamespace | None,
+    dataset: DoRobotDataset | IterableNamespace | None,
     episodes: list[int] | None,
     host: str,
     port: str,
@@ -145,30 +112,30 @@ def run_server(
                 dataset = get_dataset_info(repo_id)
         except FileNotFoundError:
             return (
-                "Make sure to convert your LeRobotDataset to v2 & above. See how to convert your dataset at https://github.com/huggingface/lerobot/pull/461",
+                "Make sure to convert your DoRobotDataset to v2 & above. See how to convert your dataset at https://github.com/huggingface/lerobot/pull/461",
                 400,
             )
         dataset_version = (
-            str(dataset.meta._version) if isinstance(dataset, LeRobotDataset) else dataset.codebase_version
+            str(dataset.meta._version) if isinstance(dataset, DoRobotDataset) else dataset.codebase_version
         )
         match = re.search(r"v(\d+)\.", dataset_version)
         if match:
             major_version = int(match.group(1))
             if major_version < 2:
-                return "Make sure to convert your LeRobotDataset to v2 & above."
+                return "Make sure to convert your DoRobotDataset to v2 & above."
 
         episode_data_csv_str, columns, ignored_columns = get_episode_data(dataset, episode_id)
         dataset_info = {
             "repo_id": f"{dataset_namespace}/{dataset_name}",
             "num_samples": dataset.num_frames
-            if isinstance(dataset, LeRobotDataset)
+            if isinstance(dataset, DoRobotDataset)
             else dataset.total_frames,
             "num_episodes": dataset.num_episodes
-            if isinstance(dataset, LeRobotDataset)
+            if isinstance(dataset, DoRobotDataset)
             else dataset.total_episodes,
             "fps": dataset.fps,
         }
-        if isinstance(dataset, LeRobotDataset):
+        if isinstance(dataset, DoRobotDataset):
             video_paths = [
                 dataset.meta.get_video_file_path(episode_id, key) for key in dataset.meta.video_keys
             ]
@@ -206,7 +173,7 @@ def run_server(
 
         if episodes is None:
             episodes = list(
-                range(dataset.num_episodes if isinstance(dataset, LeRobotDataset) else dataset.total_episodes)
+                range(dataset.num_episodes if isinstance(dataset, DoRobotDataset) else dataset.total_episodes)
             )
 
         return render_template(
@@ -228,7 +195,7 @@ def get_ep_csv_fname(episode_id: int):
     return ep_csv_fname
 
 
-def get_episode_data(dataset: LeRobotDataset | IterableNamespace, episode_index):
+def get_episode_data(dataset: DoRobotDataset | IterableNamespace, episode_index):
     """Get a csv str containing timeseries data of an episode (e.g. state and action).
     This file will be loaded by Dygraph javascript to plot data in real time."""
     columns = []
@@ -250,7 +217,7 @@ def get_episode_data(dataset: LeRobotDataset | IterableNamespace, episode_index)
     for column_name in selected_columns:
         dim_state = (
             dataset.meta.shapes[column_name][0]
-            if isinstance(dataset, LeRobotDataset)
+            if isinstance(dataset, DoRobotDataset)
             else dataset.features[column_name].shape[0]
         )
 
@@ -266,7 +233,7 @@ def get_episode_data(dataset: LeRobotDataset | IterableNamespace, episode_index)
 
     selected_columns.insert(0, "timestamp")
 
-    if isinstance(dataset, LeRobotDataset):
+    if isinstance(dataset, DoRobotDataset):
         from_idx = dataset.episode_data_index["from"][episode_index]
         to_idx = dataset.episode_data_index["to"][episode_index]
         data = (
@@ -302,7 +269,7 @@ def get_episode_data(dataset: LeRobotDataset | IterableNamespace, episode_index)
     return csv_string, columns, ignored_columns
 
 
-def get_episode_video_paths(dataset: LeRobotDataset, ep_index: int) -> list[str]:
+def get_episode_video_paths(dataset: DoRobotDataset, ep_index: int) -> list[str]:
     # get first frame of episode (hack to get video_path of the episode)
     first_frame_idx = dataset.episode_data_index["from"][ep_index].item()
     return [
@@ -311,7 +278,7 @@ def get_episode_video_paths(dataset: LeRobotDataset, ep_index: int) -> list[str]
     ]
 
 
-def get_episode_language_instruction(dataset: LeRobotDataset, ep_index: int) -> list[str]:
+def get_episode_language_instruction(dataset: DoRobotDataset, ep_index: int) -> list[str]:
     # check if the dataset has language instructions
     if "language_instruction" not in dataset.features:
         return None
@@ -336,7 +303,7 @@ def get_dataset_info(repo_id: str) -> IterableNamespace:
 
 
 def visualize_dataset_html(
-    dataset: LeRobotDataset | None,
+    dataset: DoRobotDataset | None,
     episodes: list[int] | None = None,
     output_dir: Path | None = None,
     serve: bool = True,
@@ -346,7 +313,7 @@ def visualize_dataset_html(
 ) -> Path | None:
     init_logging()
 
-    template_dir = Path(__file__).resolve().parent.parent / "templates"
+    template_dir = Path(__file__).resolve().parent / "templates"
 
     if output_dir is None:
         # Create a temporary directory that will be automatically cleaned up
@@ -377,7 +344,7 @@ def visualize_dataset_html(
     else:
         # Create a simlink from the dataset video folder containing mp4 files to the output directory
         # so that the http server can get access to the mp4 files.
-        if isinstance(dataset, LeRobotDataset):
+        if isinstance(dataset, DoRobotDataset):
             ln_videos_dir = static_dir / "videos"
 
             if not ln_videos_dir.exists():
@@ -394,7 +361,7 @@ def main():
         "--repo-id",
         type=str,
         default=None,
-        help="Name of hugging face repositery containing a LeRobotDataset dataset (e.g. `lerobot/pusht` for https://huggingface.co/datasets/lerobot/pusht).",
+        help="Name of hugging face repositery containing a DoRobotDataset dataset (e.g. `lerobot/pusht` for https://huggingface.co/datasets/lerobot/pusht).",
     )
     parser.add_argument(
         "--root",
@@ -454,7 +421,7 @@ def main():
 
     dataset = None
     if repo_id:
-        dataset = LeRobotDataset(repo_id, root=root) if not load_from_hf_hub else get_dataset_info(repo_id)
+        dataset = DoRobotDataset(repo_id, root=root) if not load_from_hf_hub else get_dataset_info(repo_id)
 
     visualize_dataset_html(dataset, **vars(args))
 

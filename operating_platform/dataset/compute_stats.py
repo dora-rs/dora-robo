@@ -15,7 +15,7 @@
 # limitations under the License.
 import numpy as np
 
-from lerobot_lite.utils.dataset import load_image_as_numpy
+from operating_platform.utils.dataset import load_image_as_numpy
 
 
 def estimate_num_samples(

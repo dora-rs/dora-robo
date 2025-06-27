@@ -18,7 +18,7 @@ class CustomFormatter(logging.Formatter):
         fnameline = f"{record.pathname}:{record.lineno}"
         return f"{record.levelname} {dt} {fnameline[-15:]:>15} {record.msg}"
 
-def init_logging(level=logging.INFO, force=False):
+def init_logging(level=logging.DEBUG, force=False):
     """
     初始化日志配置
     :param level: 日志级别

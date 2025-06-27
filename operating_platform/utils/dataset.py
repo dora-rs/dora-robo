@@ -16,17 +16,14 @@ import packaging.version
 import torch
 from datasets.table import embed_table_storage
 from huggingface_hub import DatasetCard, DatasetCardData, HfApi
-from huggingface_hub.errors import RevisionNotFoundError
+
 from PIL import Image as PILImage
 from torchvision import transforms
 
-# from lerobot_lite.datasets.backward_compatibility import (
-#     V21_MESSAGE,
-#     BackwardCompatibilityError,
-#     ForwardCompatibilityError,
-# )
+from operating_platform.utils.utils import is_valid_numpy_dtype_string
+
 # from lerobot_lite.robots.utils import Robot
-# from lerobot_lite.utils.utils import is_valid_numpy_dtype_string
+
 # from lerobot_lite.configs.types import DictLike, FeatureType, PolicyFeature
 
 DEFAULT_CHUNK_SIZE = 1000  # Max number of episodes per chunk
@@ -266,28 +263,6 @@ def is_valid_version(version: str) -> bool:
         return False
 
 
-# def check_version_compatibility(
-#     repo_id: str,
-#     version_to_check: str | packaging.version.Version,
-#     current_version: str | packaging.version.Version,
-#     enforce_breaking_major: bool = True,
-# ) -> None:
-#     v_check = (
-#         packaging.version.parse(version_to_check)
-#         if not isinstance(version_to_check, packaging.version.Version)
-#         else version_to_check
-#     )
-#     v_current = (
-#         packaging.version.parse(current_version)
-#         if not isinstance(current_version, packaging.version.Version)
-#         else current_version
-#     )
-#     if v_check.major < v_current.major and enforce_breaking_major:
-#         raise BackwardCompatibilityError(repo_id, v_check)
-#     elif v_check.minor < v_current.minor:
-#         logging.warning(V21_MESSAGE.format(repo_id=repo_id, version=v_check))
-
-
 def get_repo_versions(repo_id: str) -> list[packaging.version.Version]:
     """Returns available valid versions (branches and tags) on given repo."""
     api = HfApi()
@@ -299,50 +274,6 @@ def get_repo_versions(repo_id: str) -> list[packaging.version.Version]:
             repo_versions.append(packaging.version.parse(ref))
 
     return repo_versions
-
-
-# def get_safe_version(repo_id: str, version: str | packaging.version.Version) -> str:
-#     """
-#     Returns the version if available on repo or the latest compatible one.
-#     Otherwise, will throw a `CompatibilityError`.
-#     """
-#     target_version = (
-#         packaging.version.parse(version) if not isinstance(version, packaging.version.Version) else version
-#     )
-#     hub_versions = get_repo_versions(repo_id)
-
-#     if not hub_versions:
-#         raise RevisionNotFoundError(
-#             f"""Your dataset must be tagged with a codebase version.
-#             Assuming _version_ is the codebase_version value in the info.json, you can run this:
-#             ```python
-#             from huggingface_hub import HfApi
-
-#             hub_api = HfApi()
-#             hub_api.create_tag("{repo_id}", tag="_version_", repo_type="dataset")
-#             ```
-#             """
-#         )
-
-#     if target_version in hub_versions:
-#         return f"v{target_version}"
-
-#     compatibles = [
-#         v for v in hub_versions if v.major == target_version.major and v.minor <= target_version.minor
-#     ]
-#     if compatibles:
-#         return_version = max(compatibles)
-#         if return_version < target_version:
-#             logging.warning(f"Revision {version} for {repo_id} not found, using version v{return_version}")
-#         return f"v{return_version}"
-
-#     lower_major = [v for v in hub_versions if v.major < target_version.major]
-#     if lower_major:
-#         raise BackwardCompatibilityError(repo_id, max(lower_major))
-
-#     upper_versions = [v for v in hub_versions if v > target_version]
-#     assert len(upper_versions) > 0
-#     raise ForwardCompatibilityError(repo_id, min(upper_versions))
 
 
 def get_hf_features_from_features(features: dict) -> datasets.Features:
@@ -415,6 +346,7 @@ def get_hf_features_from_features(features: dict) -> datasets.Features:
 
 def create_empty_dataset_info(
     codebase_version: str,
+    dorobot_dataset_version: str,
     fps: int,
     robot_type: str,
     features: dict,
@@ -422,6 +354,7 @@ def create_empty_dataset_info(
 ) -> dict:
     return {
         "codebase_version": codebase_version,
+        "dorobot_dataset_version": dorobot_dataset_version,
         "robot_type": robot_type,
         "total_episodes": 0,
         "total_frames": 0,
@@ -683,22 +616,22 @@ class IterableNamespace(SimpleNamespace):
         return vars(self).keys()
 
 
-# def validate_frame(frame: dict, features: dict):
-#     optional_features = {"timestamp"}
-#     expected_features = (set(features) - set(DEFAULT_FEATURES.keys())) | {"task"}
-#     actual_features = set(frame.keys())
+def validate_frame(frame: dict, features: dict):
+    optional_features = {"timestamp"}
+    expected_features = (set(features) - set(DEFAULT_FEATURES.keys())) | {"task"}
+    actual_features = set(frame.keys())
 
-#     error_message = validate_features_presence(actual_features, expected_features, optional_features)
+    error_message = validate_features_presence(actual_features, expected_features, optional_features)
 
-#     if "task" in frame:
-#         error_message += validate_feature_string("task", frame["task"])
+    if "task" in frame:
+        error_message += validate_feature_string("task", frame["task"])
 
-#     common_features = actual_features & (expected_features | optional_features)
-#     for name in common_features - {"task"}:
-#         error_message += validate_feature_dtype_and_shape(name, features[name], frame[name])
+    common_features = actual_features & (expected_features | optional_features)
+    for name in common_features - {"task"}:
+        error_message += validate_feature_dtype_and_shape(name, features[name], frame[name])
 
-#     if error_message:
-#         raise ValueError(error_message)
+    if error_message:
+        raise ValueError(error_message)
 
 
 def validate_features_presence(
@@ -718,17 +651,17 @@ def validate_features_presence(
     return error_message
 
 
-# def validate_feature_dtype_and_shape(name: str, feature: dict, value: np.ndarray | PILImage.Image | str):
-#     expected_dtype = feature["dtype"]
-#     expected_shape = feature["shape"]
-#     if is_valid_numpy_dtype_string(expected_dtype):
-#         return validate_feature_numpy_array(name, expected_dtype, expected_shape, value)
-#     elif expected_dtype in ["image", "video"]:
-#         return validate_feature_image_or_video(name, expected_shape, value)
-#     elif expected_dtype == "string":
-#         return validate_feature_string(name, value)
-#     else:
-#         raise NotImplementedError(f"The feature dtype '{expected_dtype}' is not implemented yet.")
+def validate_feature_dtype_and_shape(name: str, feature: dict, value: np.ndarray | PILImage.Image | str):
+    expected_dtype = feature["dtype"]
+    expected_shape = feature["shape"]
+    if is_valid_numpy_dtype_string(expected_dtype):
+        return validate_feature_numpy_array(name, expected_dtype, expected_shape, value)
+    elif expected_dtype in ["image", "video"]:
+        return validate_feature_image_or_video(name, expected_shape, value)
+    elif expected_dtype == "string":
+        return validate_feature_string(name, value)
+    else:
+        raise NotImplementedError(f"The feature dtype '{expected_dtype}' is not implemented yet.")
 
 
 def validate_feature_numpy_array(

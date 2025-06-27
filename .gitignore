@@ -193,7 +193,7 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-/out/
-/Log/
+**/out/
+**/Log/
 data/
 docker/*.tar*
