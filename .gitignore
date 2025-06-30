@@ -197,6 +197,7 @@ cython_debug/
 **/Log/
 **/log/
 data/
+dataset/
 docker/*.tar*
 
 **/poetry.lock

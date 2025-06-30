@@ -16,7 +16,7 @@ def sanity_check_dataset_robot_compatibility(
     dataset: DoRobotDataset, robot: RobotConfig, fps: int, use_videos: bool
 ) -> None:
     fields = [
-        ("robot_type", dataset.meta.robot_type, robot.type),
+        ("robot_type", dataset.meta.robot_type, robot.robot_type),
         ("fps", dataset.fps, fps),
         # ("features", dataset.features, get_features_from_robot(robot, use_videos)),
     ]
@@ -126,7 +126,7 @@ class Record:
         self.thread.start()
         self.running = True
 
-    def process(self, observation, action):
+    def process(self):
         while self.running:
             if self.dataset is not None:
                 start_loop_t = time.perf_counter()
@@ -134,7 +134,7 @@ class Record:
                 observation = self.daemon.get_observation()
                 action = self.daemon.get_obs_action()
 
-                frame = {**observation, **action, "task": self.record_cfg}
+                frame = {**observation, **action, "task": self.record_cfg.single_task}
                 self.dataset.add_frame(frame)
 
                 dt_s = time.perf_counter() - start_loop_t
@@ -154,7 +154,7 @@ class Record:
             data = {
                 "file_message": {
                     "file_name": self.record_cfg.repo_id,
-                    "file_local_path": DOROBOT_DATASET / self.record_cfg.repo_id,
+                    "file_local_path": str(DOROBOT_DATASET / self.record_cfg.repo_id),
                     "file_size": "3.2",
                     "file_duration": "30",
                 },

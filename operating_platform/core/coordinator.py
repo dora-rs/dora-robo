@@ -346,7 +346,7 @@ def main(cfg: ControlPipelineConfig):
     daemon.start(cfg.robot)
 
     coordinator = Coordinator(daemon)
-    # coordinator.start()
+    coordinator.start()
 
     coordinator.stream_info(daemon.cameras_info)
     coordinator.update_stream_info_to_server()
@@ -355,7 +355,7 @@ def main(cfg: ControlPipelineConfig):
         while True:
             daemon.update()
             observation = daemon.get_observation()
-            print("get observation")
+            # print("get observation")
             if observation is not None:
                 image_keys = [key for key in observation if "image" in key]
                 for i, key in enumerate(image_keys, start=1):
@@ -363,10 +363,10 @@ def main(cfg: ControlPipelineConfig):
                     coordinator.update_stream(name, observation[key].numpy())
 
                     if not is_headless():
-                        print(f"will show image, name:{name}")
+                        # print(f"will show image, name:{name}")
                         cv2.imshow(name, observation[key].numpy())
                         cv2.waitKey(1)
-                        print("show image succese")
+                        # print("show image succese")
                     
             else:
                 print("observation is none")
