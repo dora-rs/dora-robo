@@ -1,187 +1,33 @@
+
+import cv2
+import json
+import time
 import draccus
+import socketio
+import requests
+import traceback
+import threading
+
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from pprint import pformat
 from deepdiff import DeepDiff
 from functools import cache
-import traceback
-import time
 from termcolor import colored
-import cv2
 
-from operating_platform.policy.config import PreTrainedConfig
+# from operating_platform.policy.config import PreTrainedConfig
 from operating_platform.robot.robots.configs import RobotConfig
 from operating_platform.robot.robots.utils import make_robot_from_config, Robot, busy_wait, safe_disconnect
 from operating_platform.utils import parser
 from operating_platform.utils.utils import has_method, init_logging, log_say
+from operating_platform.utils.constants import DOROBOT_DATASET
 from operating_platform.dataset.dorobot_dataset import *
 
-from operating_platform.core.client import Coordinator
+# from operating_platform.core._client import Coordinator
 from operating_platform.core.daemon import Daemon
+from operating_platform.core.record import Record, RecordConfig
 
-
-
-
-
-@dataclass
-class ControlConfig(draccus.ChoiceRegistry):
-    pass
-
-
-@ControlConfig.register_subclass("teleoperate")
-@dataclass
-class TeleoperateControlConfig(ControlConfig):
-    # Limit the maximum frames per second. By default, no limit.
-    fps: int | None = None
-    teleop_time_s: float | None = None
-    # Display all cameras on screen
-    display_cameras: bool = True
-
-
-@ControlConfig.register_subclass("record")
-@dataclass
-class RecordControlConfig(ControlConfig):
-    # Dataset identifier. By convention it should match '{hf_username}/{dataset_name}' (e.g. `lerobot/test`).
-    repo_id: str
-    # A short but accurate description of the task performed during the recording (e.g. "Pick the Lego block and drop it in the box on the right.")
-    single_task: str
-    # Root directory where the dataset will be stored (e.g. 'dataset/path').
-    root: str | Path | None = None
-    policy: PreTrainedConfig | None = None
-    # Limit the frames per second. By default, uses the policy fps.
-    fps: int = 30
-    # Number of seconds before starting data collection. It allows the robot devices to warmup and synchronize.
-    warmup_time_s: int | float = 10
-    # Number of seconds for data recording for each episode.
-    episode_time_s: int | float = 60
-    # Number of seconds for resetting the environment after each episode.
-    reset_time_s: int | float = 60
-    # Number of episodes to record.
-    num_episodes: int = 50
-    # Encode frames in the dataset into video
-    video: bool = True
-    # Upload dataset to Hugging Face hub.
-    push_to_hub: bool = True
-    # Upload on private repository on the Hugging Face hub.
-    private: bool = False
-    # Add tags to your dataset on the hub.
-    tags: list[str] | None = None
-    # Number of subprocesses handling the saving of frames as PNG. Set to 0 to use threads only;
-    # set to ≥1 to use subprocesses, each using threads to write images. The best number of processes
-    # and threads depends on your system. We recommend 4 threads per camera with 0 processes.
-    # If fps is unstable, adjust the thread count. If still unstable, try using 1 or more subprocesses.
-    num_image_writer_processes: int = 0
-    # Number of threads writing the frames as png images on disk, per camera.
-    # Too many threads might cause unstable teleoperation fps due to main thread being blocked.
-    # Not enough threads might cause low camera fps.
-    num_image_writer_threads_per_camera: int = 4
-    # Display all cameras on screen
-    display_cameras: bool = True
-    # Use vocal synthesis to read events.
-    play_sounds: bool = True
-    # Resume recording on an existing dataset.
-    resume: bool = False
-
-    def __post_init__(self):
-        # HACK: We parse again the cli args here to get the pretrained path if there was one.
-        policy_path = parser.get_path_arg("control.policy")
-        if policy_path:
-            cli_overrides = parser.get_cli_overrides("control.policy")
-            self.policy = PreTrainedConfig.from_pretrained(policy_path, cli_overrides=cli_overrides)
-            # self.policy.pretrained_path = policy_path
-
-@dataclass
-class ControlPipelineConfig:
-    robot: RobotConfig
-    control: ControlConfig
-
-    @classmethod
-    def __get_path_fields__(cls) -> list[str]:
-        """This enables the parser to load config from the policy using `--policy.path=local/dir`"""
-        return ["control.policy"]
-
-
-
-def sanity_check_dataset_name(repo_id, policy_cfg):
-    _, dataset_name = repo_id.split("/")
-    # either repo_id doesnt start with "eval_" and there is no policy
-    # or repo_id starts with "eval_" and there is a policy
-
-    # Check if dataset_name starts with "eval_" but policy is missing
-    if dataset_name.startswith("eval_") and policy_cfg is None:
-        raise ValueError(
-            f"Your dataset name begins with 'eval_' ({dataset_name}), but no policy is provided ({policy_cfg.type})."
-        )
-
-    # Check if dataset_name does not start with "eval_" but policy is provided
-    if not dataset_name.startswith("eval_") and policy_cfg is not None:
-        raise ValueError(
-            f"Your dataset name does not begin with 'eval_' ({dataset_name}), but a policy is provided ({policy_cfg.type})."
-        )
-
-
-def sanity_check_dataset_robot_compatibility(
-    dataset: LeRobotDataset, robot: RobotConfig, fps: int, use_videos: bool
-) -> None:
-    fields = [
-        ("robot_type", dataset.meta.robot_type, robot.type),
-        ("fps", dataset.fps, fps),
-        # ("features", dataset.features, get_features_from_robot(robot, use_videos)),
-    ]
-
-    mismatches = []
-    for field, dataset_value, present_value in fields:
-        diff = DeepDiff(dataset_value, present_value, exclude_regex_paths=[r".*\['info'\]$"])
-        if diff:
-            mismatches.append(f"{field}: expected {present_value}, got {dataset_value}")
-
-    if mismatches:
-        raise ValueError(
-            "Dataset metadata compatibility check failed with mismatches:\n" + "\n".join(mismatches)
-        )
-
-def log_control_info(robot: Robot, dt_s, episode_index=None, frame_index=None, fps=None):
-    log_items = []
-    if episode_index is not None:
-        log_items.append(f"ep:{episode_index}")
-    if frame_index is not None:
-        log_items.append(f"frame:{frame_index}")
-
-    def log_dt(shortname, dt_val_s):
-        nonlocal log_items, fps
-        info_str = f"{shortname}:{dt_val_s * 1000:5.2f} ({1 / dt_val_s:3.1f}hz)"
-        if fps is not None:
-            actual_fps = 1 / dt_val_s
-            if actual_fps < fps - 1:
-                info_str = colored(info_str, "yellow")
-        log_items.append(info_str)
-
-    # total step time displayed in milliseconds and its frequency
-    log_dt("dt", dt_s)
-
-    # TODO(aliberts): move robot-specific logs logic in robot.print_logs()
-    if not robot.robot_type.startswith("stretch"):
-        for name in robot.leader_arms:
-            key = f"read_leader_{name}_pos_dt_s"
-            if key in robot.logs:
-                log_dt(f"dt_R_leader_{name}", robot.logs[key])
-
-        # for name in robot.follower_arms:
-        #     key = f"write_follower_{name}_goal_pos_dt_s"
-        #     if key in robot.logs:
-        #         log_dt(f"dt_W_foll_{name}", robot.logs[key])
-
-        #     key = f"read_follower_{name}_pos_dt_s"
-        #     if key in robot.logs:
-        #         log_dt(f"dt_R_foll_{name}", robot.logs[key])
-
-        for name in robot.cameras:
-            key = f"read_camera_{name}_dt_s"
-            if key in robot.logs:
-                log_dt(f"dt_R_camera_{name}", robot.logs[key])
-
-    info_str = " ".join(log_items)
-    logging.info(info_str)
+DEFAULT_FPS = 10
 
 @cache
 def is_headless():
@@ -201,347 +47,338 @@ def is_headless():
         print()
         return True
 
-def init_keyboard_listener():
-    # Allow to exit early while recording an episode or resetting the environment,
-    # by tapping the right arrow key '->'. This might require a sudo permission
-    # to allow your terminal to monitor keyboard events.
-    events = {}
-    events["exit_early"] = False
-    events["rerecord_episode"] = False
-    events["stop_recording"] = False
+# def init_keyboard_listener():
+#     # Allow to exit early while recording an episode or resetting the environment,
+#     # by tapping the right arrow key '->'. This might require a sudo permission
+#     # to allow your terminal to monitor keyboard events.
+#     events = {}
+#     events["exit_early"] = False
+#     events["rerecord_episode"] = False
+#     events["stop_recording"] = False
 
-    if is_headless():
-        logging.warning(
-            "Headless environment detected. On-screen cameras display and keyboard inputs will not be available."
-        )
-        listener = None
-        return listener, events
+#     if is_headless():
+#         logging.warning(
+#             "Headless environment detected. On-screen cameras display and keyboard inputs will not be available."
+#         )
+#         listener = None
+#         return listener, events
 
-    # Only import pynput if not in a headless environment
-    from pynput import keyboard
+#     # Only import pynput if not in a headless environment
+#     from pynput import keyboard
 
-    def on_press(key):
-        try:
-            if key == keyboard.Key.right:
-                print("Right arrow key pressed. Exiting loop...")
-                events["exit_early"] = True
-            elif key == keyboard.Key.left:
-                print("Left arrow key pressed. Exiting loop and rerecord the last episode...")
-                events["rerecord_episode"] = True
-                events["exit_early"] = True
-            elif key == keyboard.Key.esc:
-                print("Escape key pressed. Stopping data recording...")
-                events["stop_recording"] = True
-                events["exit_early"] = True
-            elif key.char == 'q' or key.char == 'Q':  # 检测q键（不区分大小写）
-                print("Q key pressed.")
-                events["exit_early"] = True
+#     def on_press(key):
+#         try:
+#             if key == keyboard.Key.right:
+#                 print("Right arrow key pressed. Exiting loop...")
+#                 events["exit_early"] = True
+#             elif key == keyboard.Key.left:
+#                 print("Left arrow key pressed. Exiting loop and rerecord the last episode...")
+#                 events["rerecord_episode"] = True
+#                 events["exit_early"] = True
+#             elif key == keyboard.Key.esc:
+#                 print("Escape key pressed. Stopping data recording...")
+#                 events["stop_recording"] = True
+#                 events["exit_early"] = True
+#             elif key.char == 'q' or key.char == 'Q':  # 检测q键（不区分大小写）
+#                 print("Q key pressed.")
+#                 events["exit_early"] = True
 
-        except Exception as e:
-            print(f"Error handling key press: {e}")
+#         except Exception as e:
+#             print(f"Error handling key press: {e}")
 
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
+#     listener = keyboard.Listener(on_press=on_press)
+#     listener.start()
 
-    return listener, events
-
-def warmup_record(
-    robot,
-    enable_teleoperation,
-    events,
-    warmup_time_s,
-    display_cameras,
-    fps,
-):
-    control_loop(
-        robot=robot,
-        events=events,
-        control_time_s=warmup_time_s,
-        display_cameras=display_cameras,
-        fps=fps,
-        teleoperate=enable_teleoperation,
-    )
-
-def record_episode(
-    robot,
-    dataset,
-    events,
-    episode_time_s,
-    display_cameras,
-    fps,
-    single_task,
-):
-    control_loop(
-        robot=robot,
-        control_time_s=episode_time_s,
-        display_cameras=display_cameras,
-        dataset=dataset,
-        events=events,
-        fps=fps,
-        teleoperate=True,
-        single_task=single_task,
-    )
-
-@safe_disconnect
-def teleoperate(robot_cfg: RobotConfig, teleope_cfg: TeleoperateControlConfig):
-    # control_loop(
-    #     robot,
-    #     control_time_s=cfg.teleop_time_s,
-    #     fps=cfg.fps,
-    #     teleoperate=True,
-    #     display_cameras=cfg.display_cameras,
-    # )
-    pass
+#     return listener, events
 
 
-@safe_disconnect
-def record(
-    robot: Robot,
-    record_cfg: RecordControlConfig) -> LeRobotDataset:
+def cameras_to_stream_json(cameras: dict[str, int]):
+    """
+    将摄像头字典转换为包含流信息的 JSON 字符串。
+    
+    参数:
+        cameras (dict[str, int]): 摄像头名称到 ID 的映射
+    
+    返回:
+        str: 格式化的 JSON 字符串
+    """
+    stream_list = [{"id": cam_id, "name": name} for name, cam_id in cameras.items()]
+    result = {
+        "total": len(stream_list),
+        "streams": stream_list
+    }
+    return json.dumps(result)
 
-    print("In Record")
-    if record_cfg.resume:
-        dataset = LeRobotDataset(
-            record_cfg.repo_id,
-            root=record_cfg.root,
-        )
-        if len(robot.cameras) > 0:
-            dataset.start_image_writer(
-                num_processes=record_cfg.num_image_writer_processes,
-                num_threads=record_cfg.num_image_writer_threads_per_camera * len(robot.cameras),
-            )
-        sanity_check_dataset_robot_compatibility(dataset, robot, record_cfg.fps, record_cfg.video)
-    else:
-        # Create empty dataset or load existing saved episodes
-        sanity_check_dataset_name(record_cfg.repo_id, record_cfg.policy)
-        dataset = LeRobotDataset.create(
-            record_cfg.repo_id,
-            record_cfg.fps,
-            root=record_cfg.root,
-            robot=robot,
-            use_videos=record_cfg.video,
-            image_writer_processes=record_cfg.num_image_writer_processes,
-            image_writer_threads=record_cfg.num_image_writer_threads_per_camera * len(robot.cameras),
-        )
+class Coordinator:
+    def __init__(self, daemon: Daemon, server_url="http://localhost:8080"):
+        self.server_url = server_url
+        self.sio = socketio.Client()
+        self.session = requests.Session()
 
-    # Load pretrained policy
-    # policy = None if record_cfg.policy is None else make_policy(record_cfg.policy, ds_meta=dataset.meta)
+        self.daemon = daemon
 
-    if not robot.is_connected:
-        robot.connect()
+        self.running = False
+        self.last_heartbeat_time = 0
+        self.heartbeat_interval = 2  # 心跳间隔(秒)
 
-    # Execute a few seconds without recording to:
-    # 1. teleoperate the robot to move it in starting position if no policy provided,
-    # 2. give times to the robot devices to connect and start synchronizing,
-    # 3. place the cameras windows on screen
-    # enable_teleoperation = policy is None
-    # log_say("Warmup record", cfg.play_sounds)
-    listener, events = init_keyboard_listener()
-
-    warmup_record(robot, True, events, record_cfg.warmup_time_s, record_cfg.display_cameras, record_cfg.fps)
-
-    if has_method(robot, "teleop_safety_stop"):
-        robot.teleop_safety_stop()
-
-    recorded_episodes = 0
-    while True:
-        if recorded_episodes >= record_cfg.num_episodes:
-            break
-
-        log_say(f"Recording episode {dataset.num_episodes}", record_cfg.play_sounds)
-        record_episode(
-            robot=robot,
-            dataset=dataset,
-            events=events,
-            episode_time_s=record_cfg.episode_time_s,
-            display_cameras=record_cfg.display_cameras,
-            fps=record_cfg.fps,
-            single_task=record_cfg.single_task,
-        )
-
-        # Execute a few seconds without recording to give time to manually reset the environment
-        # Current code logic doesn't allow to teleoperate during this time.
-        # TODO(rcadene): add an option to enable teleoperation during reset
-        # Skip reset for the last episode to be recorded
-        if not events["stop_recording"] and (
-            (recorded_episodes < record_cfg.num_episodes - 1) or events["rerecord_episode"]
-        ):
-            # log_say("Reset the environment", record_cfg.play_sounds)
-            reset_environment(robot, events, record_cfg.reset_time_s, record_cfg.fps)
-
-        if events["rerecord_episode"]:
-            # log_say("Re-record episode", record_cfg.play_sounds)
-            events["rerecord_episode"] = False
-            events["exit_early"] = False
-            dataset.clear_episode_buffer()
-            continue
-
-        dataset.save_episode()
-        recorded_episodes += 1
-
-        if events["stop_recording"]:
-            break
-
-    # log_say("Stop recording", record_cfg.play_sounds, blocking=True)
-    stop_recording(robot, listener, record_cfg.display_cameras)
-
-    if record_cfg.push_to_hub:
-        dataset.push_to_hub(tags=record_cfg.tags, private=record_cfg.private)
-
-    # log_say("Exiting", record_cfg.play_sounds)
-    return dataset
-
-
-def reset_environment(robot, events, reset_time_s, fps):
-    # TODO(rcadene): refactor warmup_record and reset_environment
-    if has_method(robot, "teleop_safety_stop"):
-        robot.teleop_safety_stop()
-
-    control_loop(
-        robot=robot,
-        control_time_s=reset_time_s,
-        events=events,
-        fps=fps,
-        teleoperate=True,
-    )
-
-
-def stop_recording(robot, listener, display_cameras):
-    robot.disconnect()
-
-    if not is_headless():
-        if listener is not None:
-            listener.stop()
-
-        if display_cameras:
-            # cv2.destroyAllWindows()
-            pass
-
-
-def control_loop(
-    robot,
-    control_time_s = None,
-    teleoperate = False,
-    display_cameras = False,
-    dataset: DoRobotDataset | None = None,
-    events = None,
-    # policy: PreTrainedPolicy = None,
-    fps: int | None = None,
-    single_task: str | None = None,
-):
-    if events is None:
-        events = {"exit_early": False}
-
-    if control_time_s is None:
-        control_time_s = float("inf")
-
-    # if teleoperate is not None:
-    #     raise ValueError("When `teleoperate` is True, `policy` should be None.")
-
-    if dataset is not None and single_task is None:
-        raise ValueError("You need to provide a task as argument in `single_task`.")
-
-    if dataset is not None and fps is not None and dataset.fps != fps:
-        raise ValueError(f"The dataset fps should be equal to requested fps ({dataset['fps']} != {fps}).")
-
-    timestamp = 0
-    start_episode_t = time.perf_counter()
-    # image_show = [ImageShow(30) for _ in range(3)]
-
-    while timestamp < control_time_s:
-        start_loop_t = time.perf_counter()
-
-        teleoperate_start_t = time.perf_counter()
-
-        if teleoperate:
-            print("In teleoperate")
-            observation, action = robot.teleop_step(record_data=True)
-            # robot.teleop_step()
-        else:
-            # observation = robot.capture_observation()
-            # # observation["task"] = [single_task[:], single_task[:]]
-            # observation.update({"task":[single_task]})
-
-            # if policy is not None:
-            #     pred_action = predict_action(
-            #         observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
-            #     )
-            #     # Action can eventually be clipped using `max_relative_target`,
-            #     # so action actually sent is saved in the dataset.
-            #     action = robot.send_action(pred_action)
-            #     action = {"action": action}
-            pass
+        self.cameras: dict[str, int] = {
+            "image_top": 1,
+            "image_depth_top": 2,
+        } # Default Config
         
-        teleoperate_dt_s = time.perf_counter() - teleoperate_start_t
-        print(f"teleoperate_dt_s = {teleoperate_dt_s}")
+        # 注册事件处理
+        self.sio.on('HEARTBEAT_RESPONSE', self.__on_heartbeat_response_handle)
+        self.sio.on('connect', self.__on_connect_handle)
+        self.sio.on('disconnect', self.__on_disconnect_handle)
+        self.sio.on('robot_command', self.__on_robot_command_handle)
 
-        if dataset is not None:
-            frame = {**observation, **action, "task": single_task}
-            dataset.add_frame(frame)
+        self.record = None
+    
+####################### Client Start/Stop ############################
+    def start(self):
+        """启动客户端"""
+        self.running = True
+        self.sio.connect(self.server_url)
+        
+        # 启动心跳线程
+        heartbeat_thread = threading.Thread(target=self.send_heartbeat)
+        heartbeat_thread.daemon = True
+        heartbeat_thread.start()
+        
+        # print("客户端已启动，等待连接...")
+    
+    def stop(self):
+        """停止客户端"""
+        self.running = False
+        self.sio.disconnect()
+        print("客户端已停止")
+    
+####################### Client Handle ############################
+    def __on_heartbeat_response_handle(self, data):
+        """心跳响应回调"""
+        print("收到心跳响应:", data)
+    
+    def __on_connect_handle(self):
+        """连接成功回调"""
+        print("成功连接到服务器")
+        
+        # # 初始化视频流列表
+        # try:
+        #     response = self.session.post(
+        #         f"{self.server_url}/robot/stream_info",
+        #         json = cameras_to_stream_json(self.cameras),
+        #     )
+        #     print("初始化视频流列表:", response.json())
+        # except Exception as e:
+        #     print(f"初始化视频流列表失败: {e}")
+    
+    def __on_disconnect_handle(self):
+        """断开连接回调"""
+        print("与服务器断开连接")
+    
+    def __on_robot_command_handle(self, data):
+        """收到机器人命令回调"""
+        print("收到服务器命令:", data)
+        
+        # 根据命令类型进行响应
+        if data.get('cmd') == 'video_list':
+            print("处理更新视频流命令...")
+            response_data = cameras_to_stream_json(self.cameras)
+            # 发送响应
+            try:
+                response = self.session.post(
+                    f"{self.server_url}/robot/stream_info",
+                    json = response_data,
+                )
+                print(f"已发送响应 [{data.get('cmd')}]: {response_data}")
+            except Exception as e:
+                print(f"发送响应失败 [{data.get('cmd')}]: {e}")
+            
+        elif data.get('cmd') == 'start_collection':
+            print("处理开始采集命令...")
+            msg = data.get('msg')
 
-        print("after dataset ")
-        cv2_display_start_t = time.perf_counter()
-        # keboard_key = 0
-        if display_cameras and not is_headless():
-            image_keys = [key for key in observation if "image" in key]
-            for i, key in enumerate(image_keys, start=1):
-                cv2.imshow(key, observation[key].numpy())
-                
-                name = key[len("observation.images."):]
-                robot_client.update_stream(name, observation[key].numpy())
-                
-        cv2.waitKey(1)
-        cv_display_dt_s = time.perf_counter() - cv2_display_start_t
-        print(f"cv_display_dt_s = {cv_display_dt_s}")
+            task_id = msg.get('task_id')
+            task_name = msg.get('task_name')
+            task_data_id = msg.get('task_data_id')
+            repo_id=f"{task_name}_{task_id}"
 
-        print("after display_cameras ")
-        if fps is not None:
-            dt_s = time.perf_counter() - start_loop_t
-            busy_wait(1 / fps - dt_s)
+            # 构建目标目录路径
+            dataset_path = DOROBOT_DATASET
+            target_dir = dataset_path / repo_id
 
-        dt_s = time.perf_counter() - start_loop_t
-        print(f"dt_s = {dt_s}")
-        log_control_info(robot, dt_s, fps=fps)
+            # 判断是否存在对应文件夹以决定是否启用恢复模式
+            resume = False
 
-        timestamp = time.perf_counter() - start_episode_t
-        if events["exit_early"]:
-            events["exit_early"] = False
-            break
+            # 检查数据集目录是否存在
+            if not dataset_path.exists():
+                logging.info(f"Dataset directory '{dataset_path}' does not exist. Cannot resume.")
+            else:
+                # 检查目标文件夹是否存在且为目录
+                if target_dir.exists() and target_dir.is_dir():
+                    resume = True
+                    logging.info(f"Found existing directory for repo_id '{repo_id}'. Resuming operation.")
+                else:
+                    logging.info(f"No directory found for repo_id '{repo_id}'. Starting fresh.")
 
+            # resume 变量现在可用于后续逻辑
+            print(f"Resume mode: {'Enabled' if resume else 'Disabled'}")
 
+            record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, resume=resume)
+            self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg)
+            
+            self.record.start()
+
+            # 发送响应
+            self.send_response('start_collection', "success")
+        
+        elif data.get('cmd') == 'finish_collection':
+            # 模拟处理完成采集
+            print("处理完成采集命令...")
+
+            data = self.record.stop(save=True)
+            
+            # 准备响应数据
+            response_data = {
+                "msg": "success",
+                "data": data,
+            }
+            # 发送响应
+            self.send_response('finish_collection', response_data['msg'], response_data)
+        
+        elif data.get('cmd') == 'discard_collection':
+            # 模拟处理丢弃采集
+            print("处理丢弃采集命令...")
+
+            self.record.stop(save=False)
+            
+            # 发送响应
+            self.send_response('discard_collection', "success")
+        
+        elif data.get('cmd') == 'submit_collection':
+            # 模拟处理提交采集
+            print("处理提交采集命令...")
+            time.sleep(0.01)  # 模拟处理时间
+            
+            # 发送响应
+            self.send_response('submit_collection', "success")
+    
+####################### Client Send to Server ############################
+    def send_heartbeat(self):
+        """定期发送心跳"""
+        while self.running:
+            current_time = time.time()
+            if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
+                try:
+                    self.sio.emit('HEARTBEAT')
+                    self.last_heartbeat_time = current_time
+                except Exception as e:
+                    print(f"发送心跳失败: {e}")
+            time.sleep(1)
+            self.sio.wait()
+
+    # 发送回复请求
+    def send_response(self, cmd, msg, data=None):
+        """发送回复请求到服务器"""
+        try:
+            payload = {"cmd": cmd, "msg": msg}
+            if data:
+                payload.update(data)
+            
+            response = self.session.post(
+                f"{self.server_url}/robot/response",
+                json=payload
+            )
+            print(f"已发送响应 [{cmd}]: {payload}")
+        except Exception as e:
+            print(f"发送响应失败 [{cmd}]: {e}")
+
+####################### Robot API ############################
+    def stream_info(self, info: dict[str, int]):
+        self.cameras = info.copy()
+        print(f"更新摄像头信息: {self.cameras}")
+
+    def update_stream_info_to_server(self):
+        stream_info_data = cameras_to_stream_json(self.cameras)
+        print(f"stream_info_data: {stream_info_data}")
+
+        response = self.session.post(
+            f"{self.server_url}/robot/stream_info",
+            json = stream_info_data,
+        )
+
+    def update_stream(self, name, frame):
+
+        _, jpeg_frame = cv2.imencode('.jpg', frame, 
+                            [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        frame_data = jpeg_frame.tobytes()
+
+        stream_id = self.cameras[name]
+        # Build URL
+        url = f"{self.server_url}/robot/update_stream/{stream_id}"
+
+        # Send POST request
+        try:
+            response = self.session.post(url, data=frame_data)
+            if response.status_code != 200:
+                print(f"Server returned error: {response.status_code}, {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}")
+
+@dataclass
+class ControlPipelineConfig:
+    robot: RobotConfig
+    # control: ControlConfig
+
+    @classmethod
+    def __get_path_fields__(cls) -> list[str]:
+        """This enables the parser to load config from the policy using `--policy.path=local/dir`"""
+        return ["control.policy"]
+    
 
 @parser.wrap()
 def main(cfg: ControlPipelineConfig):
 
     init_logging()
     logging.info(pformat(asdict(cfg)))
-    
-    robot = make_robot_from_config(cfg.robot)
 
-    coordinator = Coordinator()
-    coordinator.start()
+    daemon = Daemon(fps=DEFAULT_FPS)
+    daemon.start(cfg.robot)
 
-    daemon = Daemon()
-    daemon.start()
-
+    coordinator = Coordinator(daemon)
+    # coordinator.start()
 
     coordinator.stream_info(daemon.cameras_info)
     coordinator.update_stream_info_to_server()
 
-    # if isinstance(cfg.control, TeleoperateControlConfig):
-    #     teleoperate(robot, cfg.control)
-    # elif isinstance(cfg.control, RecordControlConfig):
-    #     record(robot, cfg.control)
-    while True:
+    try:
+        while True:
+            daemon.update()
+            observation = daemon.get_observation()
+            print("get observation")
+            if observation is not None:
+                image_keys = [key for key in observation if "image" in key]
+                for i, key in enumerate(image_keys, start=1):
+                    name = key[len("observation.images."):]
+                    coordinator.update_stream(name, observation[key].numpy())
 
-        if dataset is not None:
-                frame = {**observation, **action, "task": single_task}
-                dataset.add_frame(frame)
-        time.sleep(1)
+                    if not is_headless():
+                        print(f"will show image, name:{name}")
+                        cv2.imshow(name, observation[key].numpy())
+                        cv2.waitKey(1)
+                        print("show image succese")
+                    
+            else:
+                print("observation is none")
+            
+    except KeyboardInterrupt:
+        print("coordinator and daemon stop")
 
-    daemon.stop()
-    coordinator.stop()
-
+    finally:
+        daemon.stop()
+        coordinator.stop()
+        cv2.destroyAllWindows()
+    
 
 if __name__ == "__main__":
-    main() # type: ignore
+    main()

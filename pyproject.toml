@@ -8,7 +8,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"  # Explicit Python constraint
-flask = "==3.0.3"
 gevent = ">=25.5.1,<26.0.0"
 flask-cors = { version = ">=6.0.1,<7.0.0", python = "<4.0" }
 pyzmq = ">=27.0.0,<28.0.0"
@@ -36,6 +35,7 @@ flask = "==3.0.3"
 deepdiff = ">=8.5.0,<9.0.0"
 zarr = ">=3.0.8,<4.0.0"
 numba = ">=0.61.2,<0.62.0"
+flask-socketio = "^5.5.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

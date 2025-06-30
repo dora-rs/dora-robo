@@ -262,4 +262,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     # 初始空配置
     stream_manager.update_video_list({"total": 0,"streams": []})
-    app.run(host='0.0.0.0', port=7080, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)

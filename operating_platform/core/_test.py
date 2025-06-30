@@ -17,7 +17,7 @@ from lerobot_lite.utils.robot_devices import busy_wait, safe_disconnect
 from lerobot_lite.utils.utils import has_method, init_logging, log_say
 from lerobot_lite.robots.utils import make_robot_from_config, Robot
 
-from client import RobotClient
+from operating_platform.core._client import RobotClient
 
 
 robot_client = RobotClient()

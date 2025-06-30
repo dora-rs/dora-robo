@@ -1,12 +1,11 @@
-import cv2
+# !!! Notice: daemon will combine with robot。TODO
+
 import time
 import torch
 import logging
 import threading
-import traceback
 
 from typing import Any
-from functools import cache
 from termcolor import colored
 
 from operating_platform.robot.robots.configs import RobotConfig
@@ -56,35 +55,19 @@ def log_control_info(robot: Robot, dt_s, episode_index=None, frame_index=None, f
     info_str = " ".join(log_items)
     logging.info(info_str)
 
-@cache
-def is_headless():
-    """Detects if python is running without a monitor."""
-    try:
-        import pynput  # noqa
-
-        return False
-    except Exception:
-        print(
-            "Error trying to import pynput. Switching to headless mode. "
-            "As a result, the video stream from the cameras won't be shown, "
-            "and you won't be able to change the control flow with keyboards. "
-            "For more info, see traceback below.\n"
-        )
-        traceback.print_exc()
-        print()
-        return True
 
 
 class Daemon:
-    def __init__(self, fps: int | None = None, display = True):
+    def __init__(self, fps: int | None = None):
         # self.record = False
         # self.evaluate
         self.fps = fps
-        self.display = display
+        # self.display = display
 
-        self.running = False
+        # self.thread = threading.Thread(target=self.process, daemon=True)
+        self.running = True
 
-        # TODO 需要加锁
+        self.data_lock = threading.Lock()
         self.pre_action: Any | dict[str, torch.Tensor] = None
         self.obs_action: Any | dict[str, torch.Tensor] = None
         self.observation: Any | dict[str, torch.Tensor] = None
@@ -95,45 +78,46 @@ class Daemon:
             self.robot = make_robot_from_config(config)
         except Exception as e:
             KeyboardInterrupt
-        self.running = True
 
-        heartbeat_thread = threading.Thread(target=self.process)
-        heartbeat_thread.daemon = True
-        heartbeat_thread.start()
+        if not self.robot.is_connected:
+            self.robot.connect()
+
+        # self.thread.start()
+        # self.running = True
+
     
     def stop(self):
-        self.running = False
+        # self.running = False
+        # self.thread.join()
+        pass
 
-    def process(self):
-        while self.running:
-            start_loop_t = time.perf_counter()
+    def update(self):
+        # while self.running:
+        start_loop_t = time.perf_counter()
+
+        observation, action = self.robot.teleop_step(record_data=True)
+
+        # if observation is not None:
+        #     self.observation = observation.copy()
+
+        # if action is not None:
+        #     self.obs_action = action.copy()
+        self.set_observation(observation)
+        self.set_obs_action(action)
 
 
-            observation, action = self.robot.teleop_step(record_data=True)
+        pre_action = self.get_pre_action()
+        if pre_action is not None:
+            # pre_action = self.pre_action.copy()
+            action = self.robot.send_action(pre_action["action"])
+            action = {"action": action}
+        
+        dt_s = time.perf_counter() - start_loop_t
 
-            self.obs_action = action
-            self.observation = observation
+        if self.fps is not None:
+            busy_wait(1 / self.fps - dt_s)
 
-            if self.action["action"] is not None:
-                action = self.robot.send_action(action["action"])
-                action = {"action": action}
-            
-
-            if self.display and not is_headless():
-                image_keys = [key for key in observation if "image" in key]
-                for _i, key in enumerate(image_keys, start=1):
-                    cv2.imshow(key, observation[key].numpy())
-            cv2.waitKey(1)
-            
-                    #         name = key[len("observation."):]
-
-                    # robot_client.update_stream(name, observation[key].numpy())
-
-            if self.fps is not None:
-                busy_wait(1 / self.fps - dt_s)
-
-            dt_s = time.perf_counter() - start_loop_t
-            log_control_info(self.robot, dt_s, fps=self.fps)
+        log_control_info(self.robot, dt_s, fps=self.fps)
 
 
     @property
@@ -142,3 +126,40 @@ class Daemon:
         for name, camera in self.robot.cameras.items():
             cameras[name] = camera.camera_index
         return cameras
+    
+    
+    def set_pre_action(self, value: Any | dict[str, torch.Tensor]):
+        with self.data_lock:
+            if value is None:
+                return
+            self.pre_action = value.copy()
+    
+    def set_obs_action(self, value: Any | dict[str, torch.Tensor]):
+        with self.data_lock:
+            if value is None:
+                return
+            self.obs_action = value.copy()
+
+    def set_observation(self, value: Any | dict[str, torch.Tensor]):
+        with self.data_lock:
+            if value is None:
+                return
+            self.observation = value.copy()
+
+    def get_pre_action(self) -> Any | dict[str, torch.Tensor]:
+        with self.data_lock:
+            if self.pre_action is None:
+                return None
+            return self.pre_action.copy()
+
+    def get_obs_action(self) -> Any | dict[str, torch.Tensor]:
+        with self.data_lock:
+            if self.obs_action is None:
+                return None
+            return self.obs_action.copy()
+    
+    def get_observation(self) -> Any | dict[str, torch.Tensor]:
+        with self.data_lock:
+            if self.observation is None:
+                return None
+            return self.observation.copy()
