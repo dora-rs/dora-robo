@@ -267,9 +267,8 @@ def modify_json(path,episodes_id):
 
 # 线程1的任务
 def upload():
-    json_object_list = []
-    #directory_path = os.path.join(fold_path1, get_today_date())
-    directory_path = os.path.join(fold_path1, "20250624")
+    directory_path = os.path.join(fold_path1, get_today_date())
+    #directory_path = os.path.join(fold_path1, "20250624")
     if not os.path.exists(directory_path):
         return  
     entries = os.listdir(directory_path) # 各任务列表
@@ -277,6 +276,7 @@ def upload():
     subdirectories = [entry for entry in entries if os.path.isdir(os.path.join(directory_path, entry))] # 仅筛选目录
     try:
         for task_data_name in subdirectories: # 1813490901
+            json_object_list = []
             each_task_path = os.path.join(directory_path,task_data_name)
             each_common_record_path = os.path.join(each_task_path,"meta","common_record.json")
             each_opdata_path = os.path.join(each_task_path,"meta","op_dataid.jsonl")
