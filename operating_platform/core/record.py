@@ -11,7 +11,12 @@ from operating_platform.dataset.dorobot_dataset import *
 from operating_platform.core.daemon import Daemon
 
 from operating_platform.utils.constants import DOROBOT_DATASET
-from operating_platform.utils.data_file import get_data_duration, get_data_size
+from operating_platform.utils.data_file import (
+    get_data_duration, 
+    get_data_size ,
+    update_dataid_json,
+    update_common_record_json,
+)
 
 
 def sanity_check_dataset_robot_compatibility(
@@ -147,25 +152,36 @@ class Record:
 
 
     def stop(self, save: bool) -> dict:
-        
-        self.thread.join()
-
         if self.running == True:
             self.running = False
+            self.thread.join()
+
             if save:
-                self.dataset.save_episode()
+                print("will save_episode")
+
+                episode_index = self.dataset.save_episode()
+
+                print("save_episode succcess, episode_index:", episode_index)
+
+                update_dataid_json(self.record_cfg.root, episode_index,  self.record_cmd)
+                update_common_record_json(self.record_cfg.root, self.record_cmd)
+                
+                print("update_dataid_json succcess")
+
                 if self.record_cfg.push_to_hub:
                     self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
 
                 file_size = get_data_size(self.record_cfg.root, self.record_cmd)
                 file_duration = get_data_duration(self.record_cfg.root, self.record_cmd)
 
+                print("get_data_size succcess, file_size:", file_size)
+
                 data = {
                     "file_message": {
                         "file_name": self.record_cfg.repo_id,
-                        "file_local_path": self.record_cfg.root,
-                        "file_size": "3.2",
-                        "file_duration": "30",
+                        "file_local_path": str(self.record_cfg.root),
+                        "file_size": str(file_size),
+                        "file_duration": str(file_duration),
                     },
                     "verification": {
                         "file_integrity": "pass",

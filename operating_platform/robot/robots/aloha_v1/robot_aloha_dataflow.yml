@@ -30,7 +30,7 @@ nodes:
       - image_depth
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC1S74100MH
+      DEVICE_SN: CC1S74100Y2
 
 
   - id: zeromq

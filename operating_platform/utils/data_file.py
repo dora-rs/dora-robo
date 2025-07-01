@@ -70,11 +70,13 @@ def file_size(path,n):
 def get_data_size(fold_path, data): # 文件大小单位(MB)
     try:
         size_bytes = 0
-        directory_path = os.path.join(fold_path, get_today_date())
-        print(directory_path)
-        #directory_path = os.path.join(fold_path1, "2025701")
-        if not os.path.exists(directory_path):
-            return 500
+
+        # directory_path = os.path.join(fold_path, get_today_date())
+        # print(directory_path)
+        # #directory_path = os.path.join(fold_path1, "2025701")
+        # if not os.path.exists(directory_path):
+        #     return 400
+
         # task_path = os.path.join(directory_path,f"{str(data['task_name'])}_{str(data['task_id'])}")
 
         task_path=fold_path
@@ -110,11 +112,12 @@ def get_data_size(fold_path, data): # 文件大小单位(MB)
 
 def get_data_duration(fold_path,data):  # 文件时长单位(s)
     try:
-        directory_path = os.path.join(fold_path, get_today_date())
-        print(directory_path)
-        #directory_path = os.path.join(fold_path1, "2025701")
-        if not os.path.exists(directory_path):
-            return 30
+        # directory_path = os.path.join(fold_path, get_today_date())
+        # print(directory_path)
+        # #directory_path = os.path.join(fold_path1, "2025701")
+        # if not os.path.exists(directory_path):
+        #     return 30
+        
         # task_path = os.path.join(directory_path,f"{str(data['task_name'])}_{str(data['task_id'])}")
         task_path = fold_path
         info_path = os.path.join(task_path,"meta","info.json")
@@ -148,7 +151,35 @@ def get_data_duration(fold_path,data):  # 文件时长单位(s)
     except Exception as e:
         print(str(e))
         return 30
+
+def update_dataid_json(path, episode_index, data):
+    opdata_path = os.path.join(path, "meta", "op_dataid.jsonl")
+
+    append_data = {
+        "episode_index": episode_index,
+        "dataid": str(data["task_data_id"]),
+    }
     
+    # 以追加模式打开文件（如果不存在则创建）
+    with open(opdata_path, 'a', encoding='utf-8') as f:
+        # 写入一行 JSON 数据（每行一个 JSON 对象）
+        f.write(json.dumps(append_data, ensure_ascii=False) + '\n')
+
+def update_common_record_json(path, data):
+    opdata_path = os.path.join(path, "meta", "common_record.json")
+
+    overwrite_data = {
+        "task_id": str(data["task_id"]),
+        "task_name": str(data["task_name"]),
+        "machine_id": str(data["machine_id"]),
+    }
+    
+    # 以追加模式打开文件（如果不存在则创建）
+    with open(opdata_path, 'w', encoding='utf-8') as f:
+        # 写入一行 JSON 数据（每行一个 JSON 对象）
+        f.write(json.dumps(overwrite_data, ensure_ascii=False) + '\n')
+
+
 # if __name__ == '__main__':
 #     fold_path = '/home/liuyou/Documents'
 #     data = {

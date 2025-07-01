@@ -859,7 +859,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
         self.episode_buffer["size"] += 1
 
-    def save_episode(self, episode_data: dict | None = None) -> None:
+    def save_episode(self, episode_data: dict | None = None) -> int:
         """
         This will save to disk the current episode in self.episode_buffer.
 
@@ -933,6 +933,8 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
         if not episode_data:  # Reset the buffer
             self.episode_buffer = self.create_episode_buffer()
+
+        return episode_index
 
     # def remove_episode(self, episode_index: int):
 
