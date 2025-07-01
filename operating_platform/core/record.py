@@ -6,10 +6,12 @@ from dataclasses import dataclass
 
 from operating_platform.robot.robots.configs import RobotConfig
 from operating_platform.robot.robots.utils import Robot, busy_wait, safe_disconnect
+
 from operating_platform.dataset.dorobot_dataset import *
 from operating_platform.core.daemon import Daemon
 
 from operating_platform.utils.constants import DOROBOT_DATASET
+from operating_platform.utils.data_file import get_data_duration, get_data_size
 
 
 def sanity_check_dataset_robot_compatibility(
@@ -89,11 +91,12 @@ class RecordConfig():
 
 
 class Record:
-    def __init__(self, fps: int, robot: Robot, daemon: Daemon, record_cfg: RecordConfig):
+    def __init__(self, fps: int, robot: Robot, daemon: Daemon, record_cfg: RecordConfig, record_cmd):
         self.robot = robot
         self.daemon = daemon
         self.record_cfg = record_cfg
         self.fps = fps
+        self.record_cmd = record_cmd
 
         if self.record_cfg.resume:
             self.dataset = DoRobotDataset(
@@ -144,29 +147,38 @@ class Record:
 
 
     def stop(self, save: bool) -> dict:
-        self.running = False
+        
         self.thread.join()
-        if save:
-            self.dataset.save_episode()
-            if self.record_cfg.push_to_hub:
-                self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
 
-            data = {
-                "file_message": {
-                    "file_name": self.record_cfg.repo_id,
-                    "file_local_path": str(DOROBOT_DATASET / self.record_cfg.repo_id),
-                    "file_size": "3.2",
-                    "file_duration": "30",
-                },
-                "verification": {
-                    "file_integrity": "pass",
-                    "camera_frame_rate": "pass",
+        if self.running == True:
+            self.running = False
+            if save:
+                self.dataset.save_episode()
+                if self.record_cfg.push_to_hub:
+                    self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
+
+                file_size = get_data_size(self.record_cfg.root, self.record_cmd)
+                file_duration = get_data_duration(self.record_cfg.root, self.record_cmd)
+
+                data = {
+                    "file_message": {
+                        "file_name": self.record_cfg.repo_id,
+                        "file_local_path": self.record_cfg.root,
+                        "file_size": "3.2",
+                        "file_duration": "30",
+                    },
+                    "verification": {
+                        "file_integrity": "pass",
+                        "camera_frame_rate": "pass",
+                    }
                 }
-            }
 
-            return data
-        else:
-            self.dataset.clear_episode_buffer()
+                return data
+            else:
+                self.dataset.clear_episode_buffer()
+
+        if self.running == False:
+            self.dataset
 
 
         # stop_recording(robot, listener, record_cfg.display_cameras)

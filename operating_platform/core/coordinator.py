@@ -14,12 +14,15 @@ from pprint import pformat
 from deepdiff import DeepDiff
 from functools import cache
 from termcolor import colored
+from datetime import datetime
+
 
 # from operating_platform.policy.config import PreTrainedConfig
 from operating_platform.robot.robots.configs import RobotConfig
 from operating_platform.robot.robots.utils import make_robot_from_config, Robot, busy_wait, safe_disconnect
 from operating_platform.utils import parser
 from operating_platform.utils.utils import has_method, init_logging, log_say
+
 from operating_platform.utils.constants import DOROBOT_DATASET
 from operating_platform.dataset.dorobot_dataset import *
 
@@ -203,9 +206,11 @@ class Coordinator:
             task_data_id = msg.get('task_data_id')
             repo_id=f"{task_name}_{task_id}"
 
+            date_str = datetime.now().strftime("%Y%m%d")
+
             # 构建目标目录路径
             dataset_path = DOROBOT_DATASET
-            target_dir = dataset_path / repo_id
+            target_dir = dataset_path / date_str / "user" / repo_id
 
             # 判断是否存在对应文件夹以决定是否启用恢复模式
             resume = False
@@ -224,8 +229,8 @@ class Coordinator:
             # resume 变量现在可用于后续逻辑
             print(f"Resume mode: {'Enabled' if resume else 'Disabled'}")
 
-            record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, resume=resume)
-            self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg)
+            record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, resume=resume, root=target_dir)
+            self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg, record_cmd=msg)
             
             self.record.start()
 

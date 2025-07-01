@@ -269,6 +269,40 @@ class DoRobotDatasetMetadata:
         self.stats = aggregate_stats([self.stats, episode_stats]) if self.stats else episode_stats
         write_episode_stats(episode_index, episode_stats, self.root)
 
+    # def remove_episode(
+    #     self,
+    #     episode_index: int,
+
+    # ) -> None:
+    #     episode_length: int,
+    #     episode_tasks: list[str],
+    #     episode_stats: dict[str, dict],
+    #     self.info["total_episodes"] -= 1
+    #     self.info["total_frames"] += episode_length
+
+    #     chunk = self.get_episode_chunk(episode_index)
+    #     if chunk >= self.total_chunks:
+    #         self.info["total_chunks"] += 1
+
+    #     self.info["splits"] = {"train": f"0:{self.info['total_episodes']}"}
+    #     self.info["total_videos"] += len(self.video_keys)
+    #     if len(self.video_keys) > 0:
+    #         self.update_video_info()
+
+    #     write_info(self.info, self.root)
+
+    #     episode_dict = {
+    #         "episode_index": episode_index,
+    #         "tasks": episode_tasks,
+    #         "length": episode_length,
+    #     }
+    #     self.episodes[episode_index] = episode_dict
+    #     write_episode(episode_dict, self.root)
+
+    #     self.episodes_stats[episode_index] = episode_stats
+    #     self.stats = aggregate_stats([self.stats, episode_stats]) if self.stats else episode_stats
+    #     write_episode_stats(episode_index, episode_stats, self.root)
+
     def update_video_info(self) -> None:
         """
         Warning: this function writes info from first episode videos, implicitly assuming that all videos have
@@ -899,6 +933,9 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
         if not episode_data:  # Reset the buffer
             self.episode_buffer = self.create_episode_buffer()
+
+    # def remove_episode(self, episode_index: int):
+
 
     def _save_episode_table(self, episode_buffer: dict, episode_index: int) -> None:
         episode_dict = {key: episode_buffer[key] for key in self.hf_features}
