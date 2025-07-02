@@ -267,7 +267,9 @@ def modify_json(path,episodes_id):
 
 # 线程1的任务
 def upload():
-    nas_auth.get_auth_sid()
+    if not nas_auth.get_auth_sid():
+        print("登录nas失败")
+        return
     directory_path = os.path.join(fold_path1, get_today_date(),'user')
     #directory_path = os.path.join(fold_path1, "20250624")
     if not os.path.exists(directory_path):
