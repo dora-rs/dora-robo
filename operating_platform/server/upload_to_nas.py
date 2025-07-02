@@ -13,8 +13,8 @@ from nas_sdk import NASAuthenticator
  
 nas_auth = NASAuthenticator()
 
-fold_path1 = "/home/liuyou/Documents/local_to_nas/aloha-1/"
-#fold_path2 = "/home/liuyou/Documents/local_to_nas/aloha-2/"
+#fold_path1 = "/home/liuyou/Documents/local_to_nas/aloha-1/"
+fold_path1 = "/home/agilex/Documents/Ryu-Yang/Operating-Platform/dataset/"
 
 nas_path = "/传输路径/ceshi/cache"
 nas_data_path = '/传输路径/ceshi/collect_data'
@@ -267,7 +267,8 @@ def modify_json(path,episodes_id):
 
 # 线程1的任务
 def upload():
-    directory_path = os.path.join(fold_path1, get_today_date())
+    nas_auth.get_auth_sid()
+    directory_path = os.path.join(fold_path1, get_today_date(),'user')
     #directory_path = os.path.join(fold_path1, "20250624")
     if not os.path.exists(directory_path):
         return  
@@ -295,7 +296,7 @@ def upload():
                         last_line_json = json_object_data  # 更新最后一行的 JSON 对象
                     except json.JSONDecodeError as e:
                         print(f"解析 JSON 失败，行内容: {line.strip()}, 错误信息: {e}")
-            task_number = int(last_line_json["episode_index"]) + 1 # 需要上传的文件数量
+            task_number = int(last_line_json["episode_index"]) + 1 # 需要上传的文件数量 # 4
 
             entries_1 = os.listdir(each_task_path) 
             subdirectories_1 = [entry for entry in entries_1 if os.path.isdir(os.path.join(each_task_path, entry))] # data video meta
@@ -303,7 +304,6 @@ def upload():
             timestamp_nas = str(add_random_milliseconds()) # 等待毫秒，造成时间差
             
             task_nas_path = os.path.join(nas_path,task_id) # 缓存目录
-            print(task_nas_path)
             if not nas_auth.check_path_exists(task_nas_path):
                 nas_auth.create_folder(task_nas_path)
             # if not os.path.exists(task_nas_path):
@@ -317,11 +317,10 @@ def upload():
             # if not os.path.exists(task_cache_nas_path):
             #     os.makedirs(task_cache_nas_path, exist_ok=False)
 
-            time.sleep(3) # 等待所有目录创造
+            time.sleep(5) # 等待所有目录创造
             while True:
                 meta_file_list = []
                 entries_2 = nas_auth.get_directory_structure(task_nas_path)
-                print(entries_2)
                 # entries_2 = os.listdir(task_nas_path) 
                 subdirectories_2 = [entry.split("***") for entry in entries_2]
                 # 找到时间戳最小的设备编号
@@ -344,13 +343,13 @@ def upload():
                                     last_line_json = json_object  # 更新最后一行的 JSON 对象
                                 except json.JSONDecodeError as e:
                                     print(f"解析 JSON 失败，行内容: {line.strip()}, 错误信息: {e}")
-                        last_episode_id = int(last_line_json["episode_index"]) + 1
+                        last_episode_id = int(last_line_json["episode_index"]) + 1 # 3
 
                         record_json_path = os.path.join(directory_path,task_id+".json")
                         if os.path.exists(record_json_path):
                             with open(record_json_path,"r",encoding="utf-8") as f:
                                 data = json.load(f)
-                                last_epid = data["episodes_id"] # 当前任务上次上传的记录
+                                last_epid = data["episodes_id"] # 当前任务上次上传的记录 #3
                                 last_episode_id = last_episode_id - last_epid
                             if task_number <= last_epid:
                                 delete_file([local_nas_meta_file_path])
@@ -358,7 +357,6 @@ def upload():
                                 break
                         else:
                             last_epid = 0
-                        
                         op_dataid_path = os.path.join(each_task_path,"meta","op_dataid.jsonl")
                         change_number(op_dataid_path,local_nas_meta_file_path,last_episode_id, last_epid)
                         
