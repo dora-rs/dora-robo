@@ -152,6 +152,19 @@ def append_jsonlines(data: dict, fpath: Path) -> None:
         writer.write(data)
 
 
+def delete_jsonlines(index: int, fpath: Path) -> None:
+    with jsonlines.open(fpath, 'r') as reader:
+        data = list(reader)
+
+    if index < 0 or index >= len(data):
+        raise IndexError(f"Invalid episode index: {index}. Valid range: [0, {len(data) - 1}]")
+
+    del data[index]
+
+    with jsonlines.open(fpath, 'w') as writer:
+        writer.write_all(data)
+
+
 def write_info(info: dict, local_dir: Path):
     write_json(info, local_dir / INFO_PATH)
 
@@ -199,6 +212,10 @@ def write_episode(episode: dict, local_dir: Path):
     append_jsonlines(episode, local_dir / EPISODES_PATH)
 
 
+def delete_episode(ep_index: int, local_dir: Path):
+    delete_jsonlines(ep_index, local_dir / EPISODES_PATH)
+
+
 def load_episodes(local_dir: Path) -> dict:
     episodes = load_jsonlines(local_dir / EPISODES_PATH)
     return {item["episode_index"]: item for item in sorted(episodes, key=lambda x: x["episode_index"])}
@@ -209,6 +226,10 @@ def write_episode_stats(episode_index: int, episode_stats: dict, local_dir: Path
     # is a dictionary of stats and not an integer.
     episode_stats = {"episode_index": episode_index, "stats": serialize_dict(episode_stats)}
     append_jsonlines(episode_stats, local_dir / EPISODES_STATS_PATH)
+
+
+def delete_episode_stats(episode_index: int, local_dir: Path):
+    delete_jsonlines(episode_index, local_dir / EPISODES_STATS_PATH)
 
 
 def load_episodes_stats(local_dir: Path) -> dict:

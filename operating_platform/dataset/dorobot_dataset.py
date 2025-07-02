@@ -1,3 +1,4 @@
+import os
 import contextlib
 import logging
 import shutil
@@ -55,6 +56,8 @@ from operating_platform.utils.dataset import (
     write_episode_stats,
     write_info,
     write_json,
+    delete_episode,
+    delete_episode_stats,
 )
 from operating_platform.utils.video import (
     VideoFrame,
@@ -269,27 +272,23 @@ class DoRobotDatasetMetadata:
         self.stats = aggregate_stats([self.stats, episode_stats]) if self.stats else episode_stats
         write_episode_stats(episode_index, episode_stats, self.root)
 
-    # def remove_episode(
-    #     self,
-    #     episode_index: int,
-
-    # ) -> None:
-    #     episode_length: int,
+    def remove_episode(self, ep_index: int) -> None:
     #     episode_tasks: list[str],
     #     episode_stats: dict[str, dict],
-    #     self.info["total_episodes"] -= 1
-    #     self.info["total_frames"] += episode_length
+        self.info["total_episodes"] -= 1
 
-    #     chunk = self.get_episode_chunk(episode_index)
-    #     if chunk >= self.total_chunks:
-    #         self.info["total_chunks"] += 1
+        episode = self.episodes[ep_index]
+        episode_length = episode["length"]
+        self.info["total_frames"] -= episode_length
 
-    #     self.info["splits"] = {"train": f"0:{self.info['total_episodes']}"}
-    #     self.info["total_videos"] += len(self.video_keys)
-    #     if len(self.video_keys) > 0:
-    #         self.update_video_info()
+        # chunk = self.get_episode_chunk(ep_index)
+        # if chunk >= self.total_chunks:
+        #     self.info["total_chunks"] += 1
 
-    #     write_info(self.info, self.root)
+        self.info["splits"] = {"train": f"0:{self.info['total_episodes']}"}
+        self.info["total_videos"] -= len(self.video_keys)
+
+        write_info(self.info, self.root)
 
     #     episode_dict = {
     #         "episode_index": episode_index,
@@ -297,11 +296,11 @@ class DoRobotDatasetMetadata:
     #         "length": episode_length,
     #     }
     #     self.episodes[episode_index] = episode_dict
-    #     write_episode(episode_dict, self.root)
+        delete_episode(ep_index, self.root)
 
     #     self.episodes_stats[episode_index] = episode_stats
     #     self.stats = aggregate_stats([self.stats, episode_stats]) if self.stats else episode_stats
-    #     write_episode_stats(episode_index, episode_stats, self.root)
+        delete_episode_stats(ep_index, self.root)
 
     def update_video_info(self) -> None:
         """
@@ -936,8 +935,16 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
         return episode_index
 
-    # def remove_episode(self, episode_index: int):
-
+    def remove_episode(self, ep_idx: int):
+        if len(self.meta.video_keys) > 0:
+            for key in self.meta.video_keys:
+                video_path = self.meta.get_video_file_path(ep_idx, key)
+                if os.path.isfile(video_path):
+                    os.remove(video_path)
+        data_path = self.meta.get_data_file_path(ep_idx)
+        if os.path.isfile(data_path):
+            os.remove(data_path)
+        self.meta.remove_episode(ep_idx)
 
     def _save_episode_table(self, episode_buffer: dict, episode_index: int) -> None:
         episode_dict = {key: episode_buffer[key] for key in self.hf_features}
@@ -951,16 +958,20 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
     def clear_episode_buffer(self) -> None:
         episode_index = self.episode_buffer["episode_index"]
-        if self.image_writer is not None:
-            for cam_key in self.meta.camera_keys:
-                img_dir = self._get_image_file_path(
-                    episode_index=episode_index, image_key=cam_key, frame_index=0
-                ).parent
-                if img_dir.is_dir():
-                    shutil.rmtree(img_dir)
 
-        # Reset the buffer
-        self.episode_buffer = self.create_episode_buffer()
+        if episode_index == 0:
+            shutil.rmtree(self.root)
+        else:
+            if self.image_writer is not None:
+                for cam_key in self.meta.camera_keys:
+                    img_dir = self._get_image_file_path(
+                        episode_index=episode_index, image_key=cam_key, frame_index=0
+                    ).parent
+                    if img_dir.is_dir():
+                        shutil.rmtree(img_dir)
+
+            # Reset the buffer
+            self.episode_buffer = self.create_episode_buffer()
 
     def start_image_writer(self, num_processes: int = 0, num_threads: int = 4) -> None:
         if isinstance(self.image_writer, AsyncImageWriter):

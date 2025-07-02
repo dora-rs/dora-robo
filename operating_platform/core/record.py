@@ -102,6 +102,7 @@ class Record:
         self.record_cfg = record_cfg
         self.fps = fps
         self.record_cmd = record_cmd
+        self.last_record_episode_index = 0
 
         if self.record_cfg.resume:
             self.dataset = DoRobotDataset(
@@ -189,13 +190,14 @@ class Record:
                     }
                 }
 
+                self.last_record_episode_index = episode_index
+
                 return data
             else:
                 self.dataset.clear_episode_buffer()
 
         if self.running == False:
-            self.dataset
-
+            self.dataset.remove_episode(self.last_record_episode_index)
 
         # stop_recording(robot, listener, record_cfg.display_cameras)
         # log_say("Stop recording", record_cfg.play_sounds, blocking=True)
