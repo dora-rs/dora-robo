@@ -16,6 +16,7 @@ from operating_platform.utils.data_file import (
     get_data_size ,
     update_dataid_json,
     update_common_record_json,
+    delete_dataid_json
 )
 
 
@@ -195,8 +196,9 @@ class Record:
                 return data
             else:
                 self.dataset.clear_episode_buffer()
-
-        if self.running == False:
+            
+        elif self.running == False:
+            delete_dataid_json(self.record_cfg.root, self.last_record_episode_index, self.record_cmd)
             self.dataset.remove_episode(self.last_record_episode_index)
 
         # stop_recording(robot, listener, record_cfg.display_cameras)

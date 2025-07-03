@@ -165,6 +165,38 @@ def update_dataid_json(path, episode_index, data):
         # 写入一行 JSON 数据（每行一个 JSON 对象）
         f.write(json.dumps(append_data, ensure_ascii=False) + '\n')
 
+def delete_dataid_json(path, episode_index, data):
+    opdata_path = os.path.join(path, "meta", "op_dataid.jsonl")
+    
+    # 构建要删除的匹配条件
+    target_episode = episode_index
+    target_dataid = str(data["task_data_id"])
+    
+    # 如果文件不存在，直接返回（无内容可删除）
+    if not os.path.exists(opdata_path):
+        return
+    
+    # 临时存储过滤后的数据
+    filtered_data = []
+    
+    # 读取并过滤文件内容
+    with open(opdata_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            try:
+                entry = json.loads(line.strip())
+                # 定义匹配条件（同时匹配episode_index和dataid）
+                if (entry.get("episode_index") == target_episode and 
+                    entry.get("dataid") == target_dataid):
+                    continue  # 跳过匹配的条目（即删除）
+                filtered_data.append(entry)
+            except json.JSONDecodeError:
+                continue  # 跳过无效JSON行
+    
+    # 覆盖写回文件（不含匹配条目）
+    with open(opdata_path, 'w', encoding='utf-8') as f:
+        for entry in filtered_data:
+            f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
 def update_common_record_json(path, data):
     opdata_path = os.path.join(path, "meta", "common_record.json")
 

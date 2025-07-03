@@ -936,15 +936,46 @@ class DoRobotDataset(torch.utils.data.Dataset):
         return episode_index
 
     def remove_episode(self, ep_idx: int):
+        print(f"[DEBUG] 开始删除剧集: ep_idx={ep_idx}")
+        
+        if ep_idx == 0:
+            print(f"[WARNING] 检测到 ep_idx=0，即将删除整个目录树: {self.root}")
+            shutil.rmtree(self.root)
+            print(f"[INFO] 目录树 {self.root} 已删除")
+            return
+
+        # 处理视频文件
         if len(self.meta.video_keys) > 0:
+            print(f"[INFO] 正在处理视频文件 (keys: {self.meta.video_keys})")
             for key in self.meta.video_keys:
-                video_path = self.meta.get_video_file_path(ep_idx, key)
+                video_path = self.root / self.meta.get_video_file_path(ep_idx, key)
                 if os.path.isfile(video_path):
+                    print(f"[DEBUG] 删除视频文件: {video_path}")
                     os.remove(video_path)
-        data_path = self.meta.get_data_file_path(ep_idx)
+                    # 验证删除结果
+                    if not os.path.exists(video_path):
+                        print(f"[SUCCESS] 成功删除视频文件: {video_path}")
+                    else:
+                        print(f"[ERROR] 删除失败！文件仍存在: {video_path}")
+                else:
+                    print(f"[SKIP] 视频文件不存在，跳过删除: {video_path}")
+
+        # 处理数据文件
+        data_path = self.root / self.meta.get_data_file_path(ep_idx)
         if os.path.isfile(data_path):
+            print(f"[DEBUG] 删除数据文件: {data_path}")
             os.remove(data_path)
+            if not os.path.exists(data_path):
+                print(f"[SUCCESS] 成功删除数据文件: {data_path}")
+            else:
+                print(f"[ERROR] 删除失败！文件仍存在: {data_path}")
+        else:
+            print(f"[SKIP] 数据文件不存在，跳过删除: {data_path}")
+
+        # 最后移除元数据
+        print(f"[INFO] 即将从元数据中移除 ep_idx={ep_idx}")
         self.meta.remove_episode(ep_idx)
+        print(f"[SUCCESS] 剧集 {ep_idx} 已完全删除")
 
     def _save_episode_table(self, episode_buffer: dict, episode_index: int) -> None:
         episode_dict = {key: episode_buffer[key] for key in self.hf_features}
