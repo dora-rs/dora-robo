@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # 配置参数（可修改）
-CONTAINER_NAME="objective_kare"      # 容器名称
+CONTAINER_NAME="kind_sanderson"      # 容器名称
 IMAGE_NAME="baai-flask-server"          # 镜像名称（默认使用 nginx）
 PORTS="-p 8080:8080"                 # 端口映射（主机端口:容器端口）
-VOLUMES="-v /host/path:/app/data"  # 卷挂载（可选）
+VOLUMES="-v /home/agilex/Documents/:/home/agilex/Documents/"  # 卷挂载（可选）
 RESTART_POLICY="--restart unless-stopped"  # 重启策略
 
 # 检查容器是否存在
@@ -20,7 +20,7 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 else
     # 容器不存在，创建并运行
     echo "创建并启动新容器 '${CONTAINER_NAME}'..."
-    docker run -d --name ${CONTAINER_NAME} ${PORTS} ${RESTART_POLICY} ${IMAGE_NAME}
+    docker run -d --name ${CONTAINER_NAME} ${PORTS} ${VOLUMES} ${RESTART_POLICY} ${IMAGE_NAME}
 fi
 
 # 可选：检查容器状态
