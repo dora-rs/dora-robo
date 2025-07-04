@@ -39,4 +39,4 @@ RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
 EXPOSE 8080
-CMD ["python", "operating_platform_server_test.py"，"--log-output=stdout"]
+CMD ["python", "operating_platform_server_test.py"]

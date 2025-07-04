@@ -10,7 +10,6 @@ import shutil
 import os
 import re
 from nas_sdk import NASAuthenticator
-import subprocess
  
 nas_auth = NASAuthenticator()
 
@@ -262,32 +261,6 @@ def modify_json(path,episodes_id):
     with open(path, 'w') as file:
         json.dump(existing_data, file, indent=4)
 
-def grant_recursive_rw_permission(directory, username,pd):
-    """
-    递归授予用户对目录的读写权限（直接使用 chmod + sudo）
-    :param directory: 目标目录路径（如 '/path/to/dir'）
-    :param username: 要授权的用户名
-    """
-    try:
-        # 1. 递归修改所有者（确保用户有权操作文件）
-        subprocess.run(
-            f"echo {pd} | sudo -S chown -R {username}:{username} {directory}",
-            shell=True,
-            check=True
-        )
- 
-        # 2. 递归授予读写权限（755：所有者rwx，其他用户r-x）
-        subprocess.run(
-            f"echo {pd} | sudo -S chmod -R 755 {directory}",
-            shell=True,
-            check=True
-        )
- 
-        print(f"成功授权用户 '{username}' 对目录 '{directory}' 的读写权限！")
-    except subprocess.CalledProcessError as e:
-        print(f"命令执行失败: {e}")
-    except Exception as e:
-        print(f"发生错误: {e}")
 
 
 
@@ -297,7 +270,6 @@ def upload():
         print("登录nas失败")
         return
     directory_path = os.path.join(fold_path1, get_today_date(),'user')
-    grant_recursive_rw_permission(directory_path,"agilex","agx")
     #directory_path = os.path.join(fold_path1, "20250624")
     if not os.path.exists(directory_path):
         print("数据路径不存在")
