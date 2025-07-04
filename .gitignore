@@ -201,3 +201,5 @@ dataset/
 docker/*.tar*
 
 **/poetry.lock
+
+*.STL
