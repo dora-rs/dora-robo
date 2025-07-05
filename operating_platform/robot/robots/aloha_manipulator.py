@@ -130,9 +130,9 @@ class AlohaManipulator:
         self.robot_type = self.config.type
 
 
-        self.leader_arms = {}
-        self.leader_arms['jointstate_right'] = self.config.right_leader_arm
-        self.leader_arms['jointstate_left'] = self.config.left_leader_arm
+        self.follower_arms = {}
+        self.follower_arms['jointstate_right'] = self.config.right_leader_arm
+        self.follower_arms['jointstate_left'] = self.config.left_leader_arm
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
 
@@ -162,8 +162,8 @@ class AlohaManipulator:
     
     @property
     def motor_features(self) -> dict:
-        action_names = self.get_motor_names(self.leader_arms)
-        state_names = self.get_motor_names(self.leader_arms)
+        action_names = self.get_motor_names(self.follower_arms)
+        state_names = self.get_motor_names(self.follower_arms)
         return {
             "action": {
                 "dtype": "float32",
@@ -266,17 +266,17 @@ class AlohaManipulator:
             return
 
         follower_pos = {}
-        for name in self.leader_arms:
+        for name in self.follower_arms:
             eight_byte_array = np.zeros(8, dtype=np.float32)
             
             now = time.perf_counter()
-             joint_teleop_read = self.follower_arms[name].async_read_joint_degree()
+            joint_teleop_read = recv_jointstats[name]
 
             
-            # eight_byte_array[:7] = joint_teleop_read[:]
+            eight_byte_array[:7] = joint_teleop_read[:]
 
             # eight_byte_array[7] = self.follower_arms[name].old_grasp
-            # eight_byte_array = np.round(eight_byte_array, 2)
+            eight_byte_array = np.round(eight_byte_array, 2)
             self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
             follower_pos[name] = torch.from_numpy(eight_byte_array)
         
@@ -284,20 +284,23 @@ class AlohaManipulator:
 
         #记录当前关节角度
         state = []
-        for name in self.leader_arms:
+        for name in self.follower_arms:
             if name in follower_pos:
                 state.append(follower_pos[name])
         state = torch.cat(state)
 
         #将关节目标位置添加到 action 列表中
         action = []
-        for name in self.leader_arms:
-            goal_eight_byte_array = np.zeros(8, dtype=np.float32)
-            # goal_eight_byte_array[:7] = self.follower_arms[name].joint_teleop_write[:]
-            # goal_eight_byte_array[7] = self.follower_arms[name].clipped_gripper
-            follower_goal_pos = torch.from_numpy(goal_eight_byte_array)
+        for name in self.follower_arms:
+            # goal_eight_byte_array = np.zeros(8, dtype=np.float32)
+            # # goal_eight_byte_array[:7] = self.follower_arms[name].joint_teleop_write[:]
+            # # goal_eight_byte_array[7] = self.follower_arms[name].clipped_gripper
+            # follower_goal_pos = torch.from_numpy(goal_eight_byte_array)
 
-            action.append(follower_goal_pos)
+            # action.append(follower_goal_pos)
+
+            if name in follower_pos:
+                action.append(follower_pos[name])
         action = torch.cat(action)
 
         # Capture images from cameras

@@ -25,7 +25,7 @@ run_command() {
 }
 
 # 准备conda激活命令
-CONDA_ACTIVATE="conda activate"
+CONDA_ACTIVATE="source /opt/conda/etc/profile.d/conda.sh && conda activate"
 
 # 清理旧的PID文件
 rm -f .pids
