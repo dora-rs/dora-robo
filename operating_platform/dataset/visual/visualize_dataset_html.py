@@ -54,10 +54,11 @@ def run_server(
     @app.route("/")
     def hommepage(dataset=dataset):
         if dataset:
-            dataset_namespace, dataset_name = dataset.repo_id.split("/")
+            dataset_time, dataset_namespace, dataset_name = dataset.repo_id.split("/")
             return redirect(
                 url_for(
                     "show_episode",
+                    dataset_time=dataset_time,
                     dataset_namespace=dataset_namespace,
                     dataset_name=dataset_name,
                     episode_id=0,

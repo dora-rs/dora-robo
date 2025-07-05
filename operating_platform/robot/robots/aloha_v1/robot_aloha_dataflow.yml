@@ -92,8 +92,8 @@ nodes:
   #   env:
   #     RERUN_MEMORY_LIMIT: 25%
 
-  - id: print_joint
-    path: print_joint.py
-    inputs:
-      jointstate_piper_left: piper_left/jointstate
-      jointstate_piper_right: piper_right/jointstate
+  # - id: print_joint
+  #   path: print_joint.py
+  #   inputs:
+  #     jointstate_piper_left: piper_left/jointstate
+  #     jointstate_piper_right: piper_right/jointstate

@@ -22,6 +22,7 @@ docker run -it \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
   -e HF_HOME=/Operating-Platform/data/hf \
+  -e DOROBOT_HOME=~/DoRobot \
   operating-platform:V1.2
 
 # 3. 检查容器是否运行

@@ -65,9 +65,11 @@ def recv_server():
                         recv_images[event_id] = frame
 
             if 'jointstat' in event_id:
-                joint_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
+                joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if joint_array is not None:
                     with lock:
+                        # print(f"Received event_id = {event_id}")
+                        # print(f"Received joint_array = {joint_array}")
                         recv_jointstats[event_id] = joint_array
 
         except zmq.Again:
@@ -131,8 +133,8 @@ class AlohaManipulator:
 
 
         self.follower_arms = {}
-        self.follower_arms['jointstate_right'] = self.config.right_leader_arm
-        self.follower_arms['jointstate_left'] = self.config.left_leader_arm
+        self.follower_arms['jointstate_right'] = self.config.right_leader_arm.motors
+        self.follower_arms['jointstate_left'] = self.config.left_leader_arm.motors
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
 
@@ -189,6 +191,19 @@ class AlohaManipulator:
             # 超时检测
             if time.perf_counter() - start_time > timeout:
                 raise TimeoutError("等待摄像头图像超时")
+
+            # 可选：减少CPU占用
+            time.sleep(0.01)
+        
+        start_time = time.perf_counter()
+        while True:
+            # 检查是否已获取所有机械臂的关节角度
+            if all(name in recv_jointstats for name in self.follower_arms):
+                break
+
+            # 超时检测
+            if time.perf_counter() - start_time > timeout:
+                raise TimeoutError("等待机械臂关节数据超时")
 
             # 可选：减少CPU占用
             time.sleep(0.01)
@@ -267,7 +282,7 @@ class AlohaManipulator:
 
         follower_pos = {}
         for name in self.follower_arms:
-            eight_byte_array = np.zeros(8, dtype=np.float32)
+            eight_byte_array = np.zeros(7, dtype=np.float32)
             
             now = time.perf_counter()
             joint_teleop_read = recv_jointstats[name]
@@ -276,7 +291,7 @@ class AlohaManipulator:
             eight_byte_array[:7] = joint_teleop_read[:]
 
             # eight_byte_array[7] = self.follower_arms[name].old_grasp
-            eight_byte_array = np.round(eight_byte_array, 2)
+            eight_byte_array = np.round(eight_byte_array, 3)
             self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
             follower_pos[name] = torch.from_numpy(eight_byte_array)
         

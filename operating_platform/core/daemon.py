@@ -33,19 +33,19 @@ def log_control_info(robot: Robot, dt_s, episode_index=None, frame_index=None, f
 
     # TODO(aliberts): move robot-specific logs logic in robot.print_logs()
     if not robot.robot_type.startswith("stretch"):
-        for name in robot.leader_arms:
-            key = f"read_leader_{name}_pos_dt_s"
-            if key in robot.logs:
-                log_dt(f"dt_R_leader_{name}", robot.logs[key])
+        # for name in robot.leader_arms:
+        #     key = f"read_leader_{name}_pos_dt_s"
+        #     if key in robot.logs:
+        #         log_dt(f"dt_R_leader_{name}", robot.logs[key])
 
-        # for name in robot.follower_arms:
+        for name in robot.follower_arms:
         #     key = f"write_follower_{name}_goal_pos_dt_s"
         #     if key in robot.logs:
         #         log_dt(f"dt_W_foll_{name}", robot.logs[key])
 
-        #     key = f"read_follower_{name}_pos_dt_s"
-        #     if key in robot.logs:
-        #         log_dt(f"dt_R_foll_{name}", robot.logs[key])
+            key = f"read_follower_{name}_pos_dt_s"
+            if key in robot.logs:
+                log_dt(f"dt_R_foll_{name}", robot.logs[key])
 
         for name in robot.cameras:
             key = f"read_camera_{name}_dt_s"
