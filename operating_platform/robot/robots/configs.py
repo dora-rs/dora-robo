@@ -25,6 +25,7 @@ from operating_platform.robot.robots.com_configs.cameras import (
 )
 
 from operating_platform.robot.robots.com_configs.motors import (
+    PiperMotorsBusConfig,
     DynamixelMotorsBusConfig,
     FeetechMotorsBusConfig,
     MotorsBusConfig,
@@ -89,19 +90,31 @@ class AlohaRobotConfig(RobotConfig):
     joint_p_limit = [169.0, 102.0, 169.0, 52.0, 169.0, 117.0, 169.0]
     joint_n_limit = [-169.0, -102.0, -169.0, -167.0, -169.0, -87.0, -169.0]
 
-    leader_arm = DynamixelMotorsBusConfig(
-        port="/dev/ttyUSB0",
+    right_leader_arm = PiperMotorsBusConfig(
+        port="can_right",
         motors={
-            "shoulder_pan": [1, "xl330-m288"],
-            "shoulder_lift": [2, "xl330-m288"],
-            "elbow_flex": [3, "xl330-m288"],
-            "wrist_flex": [4, "xl330-m288"],
-            "wrist_roll": [5, "xl330-m288"],
-            "wrist_1": [6, "xl330-m288"],
-            "weist_2": [7, "xl330-m288"],
-            "gripper": [8, "xl330-m288"],
+            "joint_1": [1, "piper-motor"],
+            "joint_2": [2, "piper-motor"],
+            "joint_3": [3, "piper-motor"],
+            "joint_4": [4, "piper-motor"],
+            "joint_5": [5, "piper-motor"],
+            "joint_6": [6, "piper-motor"],
+            "joint_7": [7, "piper-motor"],
         },
-    ) 
+    )
+
+    left_leader_arm = PiperMotorsBusConfig(
+        port="can_left",
+        motors={
+            "joint_1": [1, "piper-motor"],
+            "joint_2": [2, "piper-motor"],
+            "joint_3": [3, "piper-motor"],
+            "joint_4": [4, "piper-motor"],
+            "joint_5": [5, "piper-motor"],
+            "joint_6": [6, "piper-motor"],
+            "joint_7": [7, "piper-motor"],
+        },
+    )
 
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {

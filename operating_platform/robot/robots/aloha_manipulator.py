@@ -38,6 +38,7 @@ socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
 
 running_server = True
 recv_images = {}  # 缓存每个 event_id 的最新帧
+recv_jointstats = {} 
 lock = threading.Lock()  # 线程锁
 
 def recv_server():
@@ -52,15 +53,23 @@ def recv_server():
             event_id = message_parts[0].decode('utf-8')
             buffer_bytes = message_parts[1]
 
-            # 解码图像
-            img_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
-            frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            if frame is not None:
-                with lock:
-                    # print(f"Received event_id = {event_id}")
-                    recv_images[event_id] = frame
+            if 'image' in event_id:
+                # 解码图像
+                img_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
+                frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                
+                if frame is not None:
+                    with lock:
+                        # print(f"Received event_id = {event_id}")
+                        recv_images[event_id] = frame
+
+            if 'jointstat' in event_id:
+                joint_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
+                if joint_array is not None:
+                    with lock:
+                        recv_jointstats[event_id] = joint_array
+
         except zmq.Again:
             # 接收超时，继续循环
             print(f"Received Timeout")
@@ -122,8 +131,8 @@ class AlohaManipulator:
 
 
         self.leader_arms = {}
-        self.leader_arms['right'] = self.config.leader_arm.motors
-        # self.leader_arms['left'] = self.config.right_leader_arm.motors
+        self.leader_arms['jointstate_right'] = self.config.right_leader_arm
+        self.leader_arms['jointstate_left'] = self.config.left_leader_arm
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
 
@@ -261,7 +270,7 @@ class AlohaManipulator:
             eight_byte_array = np.zeros(8, dtype=np.float32)
             
             now = time.perf_counter()
-            # joint_teleop_read = self.follower_arms[name].async_read_joint_degree()
+             joint_teleop_read = self.follower_arms[name].async_read_joint_degree()
 
             
             # eight_byte_array[:7] = joint_teleop_read[:]
