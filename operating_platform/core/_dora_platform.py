@@ -6,7 +6,6 @@ import pyarrow as pa
 
 from dora import Node
 
-
 stream_id_1 = os.getenv("STREAM_ID_1", "default_stream")
 stream_id_2 = os.getenv("STREAM_ID_2", "default_stream")
 server_url = os.getenv("SERVER_URL", "http://localhost:8080")
