@@ -43,3 +43,9 @@ pip install flask
 pip install draccus
 pip install deepdiff
 ```
+
+
+```
+
+dpkg-reconfigure locales
+```

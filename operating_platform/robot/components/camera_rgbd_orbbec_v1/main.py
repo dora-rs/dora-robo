@@ -226,7 +226,7 @@ def main():
             # Send Color Image
             ret, frame = cv2.imencode("." + "jpeg", color_image)
             if ret:
-                node.send_output("image", pa.array(frame), {"encoding": "jpeg"})
+                node.send_output("image", pa.array(frame), {"encoding": "jpeg", "width": int(640), "height": int(480)})
 
             # Get Depth data
             depth_frame = frames.get_depth_frame()
@@ -263,7 +263,7 @@ def main():
             depth_image = cv2.applyColorMap(depth_image, cv2.COLORMAP_JET)
             ret, frame = cv2.imencode("." + "jpeg", depth_image)
             if ret:
-                node.send_output("image_depth", pa.array(frame), {"encoding": "jpeg"})
+                node.send_output("image_depth", pa.array(frame), {"encoding": "jpeg", "width": int(640), "height": int(480)})
 
             # cv2.imshow("0", color_image)
             # cv2.waitKey(40)

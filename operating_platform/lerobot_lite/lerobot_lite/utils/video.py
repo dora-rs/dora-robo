@@ -20,7 +20,8 @@ import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional, Literal
+import re
 
 import pyarrow as pa
 import torch
@@ -28,6 +29,63 @@ import torchvision
 from datasets.features.features import register_feature
 from PIL import Image
 
+
+
+def get_available_encoders():
+    """
+    获取当前系统中 ffmpeg 支持的视频编码器列表。
+    """
+    try:
+        # 执行 ffmpeg -encoders 命令
+        result = subprocess.run(
+            ["ffmpeg", "-encoders"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=True
+        )
+        output = result.stdout
+
+        # # 调试：打印完整输出
+        # print("ffmpeg output:")
+        # print(output)
+
+        encoders = set()
+        in_encoders = False
+
+        for line in output.splitlines():
+            line = line.strip()
+
+            # 检测到 Encoders: 行，开始解析编码器
+            if line == "Encoders:":
+                in_encoders = True
+                continue
+
+            if not in_encoders:
+                continue
+
+            # 匹配视频编码器行：V + 5个非空白字符 + 空格 + 编码器名称
+            match = re.match(r"^\s*V\S{5}\s+(\S+)", line)
+            if match:
+                encoders.add(match.group(1))
+
+        print(f"Get ffmpeg encoders: {encoders}")
+
+        return encoders
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        raise RuntimeError(
+            "ffmpeg not found or failed to execute. "
+            "Please ensure ffmpeg is installed and available in your PATH."
+        )
+    
+# 缓存编码器列表，避免重复调用 ffmpeg
+_AVAILABLE_ENCODERS = None
+
+def _ensure_encoders_loaded():
+    global _AVAILABLE_ENCODERS
+    if _AVAILABLE_ENCODERS is None:
+        _AVAILABLE_ENCODERS = get_available_encoders()
 
 def decode_video_frames_torchvision(
     video_path: Path | str,
@@ -131,15 +189,47 @@ def encode_video_frames(
     imgs_dir: Path | str,
     video_path: Path | str,
     fps: int,
-    vcodec: str = "libopenh264",
+    vcodec: Literal["libopenh264", "libx264"] = "libx264",
     pix_fmt: str = "yuv420p",
     g: int | None = 10,
     crf: int | None = 10,
     fast_decode: int = 0,
-    log_level: str | None = "error",
+    log_level: Optional[str] = "error",
     overwrite: bool = False,
 ) -> None:
     """More info on ffmpeg arguments tuning on `benchmark/video/README.md`"""
+
+    # 确保编码器列表已加载
+    _ensure_encoders_loaded()
+
+    # 获取当前支持的编码器列表
+    available_encoders = _AVAILABLE_ENCODERS
+
+    # 用户指定的编码器是否可用
+    if vcodec in available_encoders:
+        pass  # 正常使用指定的编码器
+    else:
+        # 从支持的两个编码器中选择一个可用的
+        supported_candidates = {"libopenh264", "libx264"} & set(available_encoders)
+
+        if not supported_candidates:
+            raise ValueError(
+                "None of the supported encoders are available. "
+                "Please ensure at least one of 'libopenh264' or 'libx264' is supported by your ffmpeg installation."
+            )
+
+        # 优先选择 libx264，否则选择 libopenh264
+        selected_vcodec = "libx264" if "libx264" in supported_candidates else "libopenh264"
+
+        # 发出警告
+        warnings.warn(
+            f"vcodec '{vcodec}' not available. Automatically switched to '{selected_vcodec}'.",
+            UserWarning
+        )
+
+        vcodec = selected_vcodec
+
+    # 剩余逻辑不变（略去，与原函数一致）
     video_path = Path(video_path)
     video_path.parent.mkdir(parents=True, exist_ok=True)
 
