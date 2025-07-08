@@ -5,7 +5,7 @@ CONTAINER_NAME="operating_platform"
 PROJECT_DIR="/root/Operating-Platform"
 CONDA_ENV1="op-robot-aloha"
 CONDA_ENV2="op"
-DATAFLOW_PATH="/operating_platform/robot/robots/aloha_v1/robot_aloha_dataflow.yml"
+DATAFLOW_PATH="operating_platform/robot/robots/aloha_v1/robot_aloha_dataflow.yml"
 
 xhost +
 

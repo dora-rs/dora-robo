@@ -203,3 +203,4 @@ docker/*.tar*
 **/poetry.lock
 
 *.STL
+.pids
