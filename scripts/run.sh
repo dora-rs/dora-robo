@@ -32,8 +32,9 @@ CONDA_ACTIVATE="source /opt/conda/etc/profile.d/conda.sh && conda activate"
 # 清理旧的PID文件
 rm -f .pids
 
-# 并行运行命令
+# 运行命令
 run_command "cd $PROJECT_DIR && $CONDA_ACTIVATE $CONDA_ENV1 && dora run $DATAFLOW_PATH" "dataflow.log"
+sleep 5
 run_command "cd $PROJECT_DIR && $CONDA_ACTIVATE $CONDA_ENV2 && python operating_platform/core/coordinator.py --robot.type=aloha" "coordinator.log"
 
 echo "[$(date)] 所有进程已启动，PID记录在.pids文件中"
