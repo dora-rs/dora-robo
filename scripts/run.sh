@@ -7,6 +7,8 @@ CONDA_ENV1="op-robot-aloha"
 CONDA_ENV2="op"
 DATAFLOW_PATH="/operating_platform/robot/robots/aloha_v1/robot_aloha_dataflow.yml"
 
+xhost +
+
 # 启动容器并检查状态
 echo "[$(date)] 正在启动容器..."
 docker start "$CONTAINER_NAME" || { echo "容器启动失败"; exit 1; }
