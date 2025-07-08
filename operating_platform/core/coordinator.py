@@ -364,12 +364,14 @@ def main(cfg: ControlPipelineConfig):
             if observation is not None:
                 image_keys = [key for key in observation if "image" in key]
                 for i, key in enumerate(image_keys, start=1):
+                    img = cv2.cvtColor(observation[key].numpy(), cv2.COLOR_RGB2BGR) 
+
                     name = key[len("observation.images."):]
-                    coordinator.update_stream(name, observation[key].numpy())
+                    coordinator.update_stream(name, img)
 
                     if not is_headless():
                         # print(f"will show image, name:{name}")
-                        cv2.imshow(name, observation[key].numpy())
+                        cv2.imshow(name, img)
                         cv2.waitKey(1)
                         # print("show image succese")
                     
