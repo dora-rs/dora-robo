@@ -124,6 +124,8 @@ class Coordinator:
         self.last_heartbeat_time = 0
         self.heartbeat_interval = 2  # 心跳间隔(秒)
 
+        self.recording = False
+
         self.cameras: dict[str, int] = {
             "image_top": 1,
             "image_depth_top": 2,
@@ -201,6 +203,15 @@ class Coordinator:
             print("处理开始采集命令...")
             msg = data.get('msg')
 
+            if self.recording == True:
+                # self.send_response('start_collection', "fail")
+
+                self.record.stop(save=False)
+                self.recording = False
+
+
+            self.recording = True
+
             task_id = msg.get('task_id')
             task_name = msg.get('task_name')
             task_data_id = msg.get('task_data_id')
@@ -242,7 +253,8 @@ class Coordinator:
             print("处理完成采集命令...")
 
             data = self.record.stop(save=True)
-            
+            self.recording = False
+
             # 准备响应数据
             response_data = {
                 "msg": "success",
@@ -256,7 +268,8 @@ class Coordinator:
             print("处理丢弃采集命令...")
 
             self.record.stop(save=False)
-            
+            self.recording = False
+
             # 发送响应
             self.send_response('discard_collection', "success")
         
