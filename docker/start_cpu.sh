@@ -20,6 +20,7 @@ docker run -it \
   -e XDG_RUNTIME_DIR=/tmp \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
+  -e DOROBOT_HOME=/root/DoRobot \
   operating-platform:V1.4_ubuntu20
 
 # 3. 检查容器是否运行
