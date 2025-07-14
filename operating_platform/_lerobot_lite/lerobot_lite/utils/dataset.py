@@ -44,7 +44,7 @@ from lerobot_lite.robots.utils import Robot
 from lerobot_lite.utils.utils import is_valid_numpy_dtype_string
 from lerobot_lite.configs.types import DictLike, FeatureType, PolicyFeature
 
-DEFAULT_CHUNK_SIZE = 1000  # Max number of episodes per chunk
+DEFAULT_CHUNK_SIZE = 10000  # Max number of episodes per chunk
 
 INFO_PATH = "meta/info.json"
 EPISODES_PATH = "meta/episodes.jsonl"
