@@ -20,8 +20,7 @@ docker run -it \
   -e XDG_RUNTIME_DIR=/tmp \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
-  -e DOROBOT_HOME=~/DoRobot \
-  operating-platform:V1.3_ubuntu20
+  operating-platform:V1.4_ubuntu20
 
 # 3. 检查容器是否运行
 if [ "$(docker inspect -f '{{.State.Running}}' operating_platform 2>/dev/null)" == "true" ]; then
