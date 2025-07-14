@@ -60,13 +60,17 @@ nodes:
     path: ../dora_zeromq.py
     inputs: 
       image_top: camera_top/image
-      image_depth_top: camera_top/image_depth
+      # image_depth_top: camera_top/image_depth
       image_right: camera_right/image
-      image_depth_right: camera_right/image_depth
+      # image_depth_right: camera_right/image_depth
       image_left: camera_left/image
-      image_depth_left: camera_left/image_depth
+      # image_depth_left: camera_left/image_depth
       jointstate_right: piper_right/jointstate
       jointstate_left: piper_left/jointstate
+      pose_right: piper_right/pose
+      pose_left: piper_left/pose
+      gripper_right: piper_right/gripper
+      gripper_left: piper_left/gripper
 
   # - id: rerun
   #   path: dora-rerun

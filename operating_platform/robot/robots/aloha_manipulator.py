@@ -39,6 +39,8 @@ socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
 running_server = True
 recv_images = {}  # 缓存每个 event_id 的最新帧
 recv_jointstats = {} 
+recv_pose = {}
+recv_gripper = {}
 lock = threading.Lock()  # 线程锁
 
 def recv_server():
@@ -71,6 +73,19 @@ def recv_server():
                         # print(f"Received event_id = {event_id}")
                         # print(f"Received joint_array = {joint_array}")
                         recv_jointstats[event_id] = joint_array
+
+            if 'pose' in event_id:
+                pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+                if pose_array is not None:
+                    with lock:
+                        recv_pose[event_id] = pose_array
+
+            if 'gripper' in event_id:
+                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+                if gripper_array is not None:
+                    with lock:
+                        recv_gripper[event_id] = gripper_array
+
 
         except zmq.Again:
             # 接收超时，继续循环
@@ -133,8 +148,8 @@ class AlohaManipulator:
 
 
         self.follower_arms = {}
-        self.follower_arms['jointstate_right'] = self.config.right_leader_arm.motors
-        self.follower_arms['jointstate_left'] = self.config.left_leader_arm.motors
+        self.follower_arms['right'] = self.config.right_leader_arm.motors
+        self.follower_arms['left'] = self.config.left_leader_arm.motors
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
 
@@ -198,12 +213,45 @@ class AlohaManipulator:
         start_time = time.perf_counter()
         while True:
             # 检查是否已获取所有机械臂的关节角度
-            if all(name in recv_jointstats for name in self.follower_arms):
+            if any(
+                any(name in key for key in recv_jointstats)
+                for name in self.follower_arms
+            ):
                 break
 
             # 超时检测
             if time.perf_counter() - start_time > timeout:
                 raise TimeoutError("等待机械臂关节数据超时")
+
+            # 可选：减少CPU占用
+            time.sleep(0.01)
+
+        start_time = time.perf_counter()
+        while True:
+            if any(
+                any(name in key for key in recv_pose)
+                for name in self.follower_arms
+            ):
+                break
+
+            # 超时检测
+            if time.perf_counter() - start_time > timeout:
+                raise TimeoutError("等待机械臂末端位姿超时")
+
+            # 可选：减少CPU占用
+            time.sleep(0.01)
+
+        start_time = time.perf_counter()
+        while True:
+            if any(
+                any(name in key for key in recv_gripper)
+                for name in self.follower_arms
+            ):
+                break
+
+            # 超时检测
+            if time.perf_counter() - start_time > timeout:
+                raise TimeoutError("等待机械臂夹爪超时")
 
             # 可选：减少CPU占用
             time.sleep(0.01)
@@ -280,42 +328,73 @@ class AlohaManipulator:
         if not record_data:
             return
 
+        follower_joint = {}
+        for name in self.follower_arms:
+            for match_name in recv_jointstats:
+                if name in match_name:
+                    now = time.perf_counter()
+
+                    byte_array = np.zeros(6, dtype=np.float32)
+                    joint_read = recv_jointstats[match_name]
+
+                    byte_array[:6] = joint_read[:6]
+                    byte_array = np.round(byte_array, 3)
+                    
+                    follower_joint[name] = torch.from_numpy(byte_array)
+
+                    self.logs[f"read_follower_{name}_joint_dt_s"] = time.perf_counter() - now
+
         follower_pos = {}
         for name in self.follower_arms:
-            eight_byte_array = np.zeros(7, dtype=np.float32)
-            
-            now = time.perf_counter()
-            joint_teleop_read = recv_jointstats[name]
+            for match_name in recv_pose:
+                if name in match_name:
+                    now = time.perf_counter()
 
-            
-            eight_byte_array[:7] = joint_teleop_read[:]
+                    byte_array = np.zeros(6, dtype=np.float32)
+                    pose_read = recv_pose[match_name]
 
-            # eight_byte_array[7] = self.follower_arms[name].old_grasp
-            eight_byte_array = np.round(eight_byte_array, 3)
-            self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
-            follower_pos[name] = torch.from_numpy(eight_byte_array)
-        
-            # self.follower_arms[name].old_grasp=self.follower_arms[name].clipped_gripper
+                    byte_array[:6] = pose_read[:]
+                    byte_array = np.round(byte_array, 3)
+                    
+                    follower_pos[name] = torch.from_numpy(byte_array)
+
+                    self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
+
+        follower_gripper = {}
+        for name in self.follower_arms:
+            for match_name in recv_gripper:
+                    now = time.perf_counter()
+
+                    byte_array = np.zeros(1, dtype=np.float32)
+                    gripper_read = recv_gripper[match_name]
+
+                    byte_array[:1] = gripper_read[:]
+                    byte_array = np.round(byte_array, 3)
+                    
+                    follower_gripper[name] = torch.from_numpy(byte_array)
+
+                    self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
 
         #记录当前关节角度
         state = []
         for name in self.follower_arms:
+            if name in follower_joint:
+                state.append(follower_joint[name])
             if name in follower_pos:
                 state.append(follower_pos[name])
+            if name in follower_gripper:
+                state.append(follower_gripper[name])
         state = torch.cat(state)
 
         #将关节目标位置添加到 action 列表中
         action = []
         for name in self.follower_arms:
-            # goal_eight_byte_array = np.zeros(8, dtype=np.float32)
-            # # goal_eight_byte_array[:7] = self.follower_arms[name].joint_teleop_write[:]
-            # # goal_eight_byte_array[7] = self.follower_arms[name].clipped_gripper
-            # follower_goal_pos = torch.from_numpy(goal_eight_byte_array)
-
-            # action.append(follower_goal_pos)
-
+            if name in follower_joint:
+                action.append(follower_joint[name])
             if name in follower_pos:
                 action.append(follower_pos[name])
+            if name in follower_gripper:
+                action.append(follower_gripper[name])
         action = torch.cat(action)
 
         # Capture images from cameras

@@ -93,26 +93,38 @@ class AlohaRobotConfig(RobotConfig):
     right_leader_arm = PiperMotorsBusConfig(
         port="can_right",
         motors={
-            "joint_1": [1, "piper-motor"],
-            "joint_2": [2, "piper-motor"],
-            "joint_3": [3, "piper-motor"],
-            "joint_4": [4, "piper-motor"],
-            "joint_5": [5, "piper-motor"],
-            "joint_6": [6, "piper-motor"],
-            "joint_7": [7, "piper-motor"],
+            "joint_1": [1,  "piper-motor"],
+            "joint_2": [2,  "piper-motor"],
+            "joint_3": [3,  "piper-motor"],
+            "joint_4": [4,  "piper-motor"],
+            "joint_5": [5,  "piper-motor"],
+            "joint_6": [6,  "piper-motor"],
+            "pose_x":  [7,  "piper-pose"],
+            "pose_y":  [8,  "piper-pose"],
+            "pose_z":  [9,  "piper-pose"],
+            "pose_rx": [10, "piper-pose"],
+            "pose_ry": [11, "piper-pose"],
+            "pose_rz": [12, "piper-pose"],
+            "gripper": [13, "piper-gripper"],
         },
     )
 
     left_leader_arm = PiperMotorsBusConfig(
         port="can_left",
         motors={
-            "joint_1": [1, "piper-motor"],
-            "joint_2": [2, "piper-motor"],
-            "joint_3": [3, "piper-motor"],
-            "joint_4": [4, "piper-motor"],
-            "joint_5": [5, "piper-motor"],
-            "joint_6": [6, "piper-motor"],
-            "joint_7": [7, "piper-motor"],
+            "joint_1": [1,  "piper-motor"],
+            "joint_2": [2,  "piper-motor"],
+            "joint_3": [3,  "piper-motor"],
+            "joint_4": [4,  "piper-motor"],
+            "joint_5": [5,  "piper-motor"],
+            "joint_6": [6,  "piper-motor"],
+            "pose_x":  [7,  "piper-pose"],
+            "pose_y":  [8,  "piper-pose"],
+            "pose_z":  [9,  "piper-pose"],
+            "pose_rx": [10, "piper-pose"],
+            "pose_ry": [11, "piper-pose"],
+            "pose_rz": [12, "piper-pose"],
+            "gripper": [13, "piper-gripper"],
         },
     )
 
@@ -136,24 +148,24 @@ class AlohaRobotConfig(RobotConfig):
                 width=640,
                 height=480,
             ),
-            "image_depth_top": OpenCVCameraConfig(
-                camera_index=4,
-                fps=30,
-                width=640,
-                height=400,
-            ),
-            "image_depth_right": OpenCVCameraConfig(
-                camera_index=5,
-                fps=30,
-                width=640,
-                height=400,
-            ),
-            "image_depth_left": OpenCVCameraConfig(
-                camera_index=6,
-                fps=30,
-                width=640,
-                height=400,
-            ),
+            # "image_depth_top": OpenCVCameraConfig(
+            #     camera_index=4,
+            #     fps=30,
+            #     width=640,
+            #     height=400,
+            # ),
+            # "image_depth_right": OpenCVCameraConfig(
+            #     camera_index=5,
+            #     fps=30,
+            #     width=640,
+            #     height=400,
+            # ),
+            # "image_depth_left": OpenCVCameraConfig(
+            #     camera_index=6,
+            #     fps=30,
+            #     width=640,
+            #     height=400,
+            # ),
         }
     )
 
