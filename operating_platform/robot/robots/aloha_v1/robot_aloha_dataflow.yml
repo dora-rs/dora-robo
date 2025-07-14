@@ -2,7 +2,7 @@ nodes:
   - id: camera_top
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/40
+      tick: dora/timer/millis/33
     outputs:
       - image
       - image_depth
@@ -13,7 +13,7 @@ nodes:
   - id: camera_right
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/40
+      tick: dora/timer/millis/33
     outputs:
       - image
       - image_depth
@@ -24,7 +24,7 @@ nodes:
   - id: camera_left
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/40
+      tick: dora/timer/millis/33
     outputs:
       - image
       - image_depth
@@ -35,7 +35,7 @@ nodes:
   - id: piper_right
     path: dora-piper
     inputs:
-      tick: dora/timer/millis/40
+      tick: dora/timer/millis/33
     outputs:
       - jointstate
       - pose
@@ -47,7 +47,7 @@ nodes:
   - id: piper_left
     path: dora-piper
     inputs:
-      tick: dora/timer/millis/40
+      tick: dora/timer/millis/33
     outputs:
       - jointstate
       - pose
