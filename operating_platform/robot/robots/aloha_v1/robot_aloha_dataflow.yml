@@ -2,7 +2,7 @@ nodes:
   - id: camera_top
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/100
+      tick: dora/timer/millis/40
     outputs:
       - image
       - image_depth
@@ -13,7 +13,7 @@ nodes:
   - id: camera_right
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/100
+      tick: dora/timer/millis/40
     outputs:
       - image
       - image_depth
@@ -24,7 +24,7 @@ nodes:
   - id: camera_left
     path: ../../components/camera_rgbd_orbbec_v1/main.py
     inputs:
-      tick: dora/timer/millis/100
+      tick: dora/timer/millis/40
     outputs:
       - image
       - image_depth

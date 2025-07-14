@@ -30,7 +30,7 @@ from operating_platform.dataset.dorobot_dataset import *
 from operating_platform.core.daemon import Daemon
 from operating_platform.core.record import Record, RecordConfig
 
-DEFAULT_FPS = 10
+DEFAULT_FPS = 25
 
 @cache
 def is_headless():
