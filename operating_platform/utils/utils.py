@@ -86,6 +86,38 @@ def get_safe_dtype(dtype: torch.dtype, device: str | torch.device):
     else:
         return dtype
     
+def git_branch_log():
+    current_branch = get_current_git_branch()
+    
+    # 分支匹配规则：优先级从上到下
+    branch_patterns = {
+        'main':    ('🚀', '正在主分支上运行'),
+        'release': ('📦', '正在正式分支上运行'),
+        'dev':     ('🛠️', '正在开发分支上运行'),
+        'test':    ('🧪', '正在测试分支上运行'),
+        'debug':   ('🐞', '正在调试分支上运行'),
+    }
+
+    if not current_branch:
+        print("❓ 当前分支: 未知分支")
+        return
+
+    current_branch = current_branch.lower()
+
+    for branch, (emoji, message) in branch_patterns.items():
+        if branch == current_branch:
+            print(f"{emoji} {message}")
+            return
+
+    # 如果没有精确匹配，再模糊匹配一次
+    for branch, (emoji, message) in branch_patterns.items():
+        if branch in current_branch:
+            print(f"{emoji} 正在包含 '{branch}' 的分支上运行")
+            return
+
+    # 完全未知的分支
+    print(f"❓ 当前分支: {current_branch}")
+    
 def get_current_git_branch():
     """获取当前 Git 分支名称"""
     try:
