@@ -85,7 +85,20 @@ def get_safe_dtype(dtype: torch.dtype, device: str | torch.device):
         return torch.float32
     else:
         return dtype
-
+    
+def get_current_git_branch():
+    """获取当前 Git 分支名称"""
+    try:
+        # 执行 git 命令获取当前分支
+        branch = subprocess.check_output(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        ).strip()
+        return branch
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # 处理异常情况（非 git 仓库或未安装 git）
+        return None
 
 def is_torch_device_available(try_device: str) -> bool:
     try_device = str(try_device)  # Ensure try_device is a string
