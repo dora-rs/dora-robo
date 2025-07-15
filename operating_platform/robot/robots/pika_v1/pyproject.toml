@@ -1,0 +1,25 @@
+[project]
+name = "dorobot-robot-pika-v1"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Xiang Yang",email = "ryu-yang@qq.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "dora-rs-cli (>=0.3.11,<0.4.0)",
+    "dora-rerun (>=0.3.11,<0.4.0)",
+    "pysurvive (==1.1.21)",
+]
+
+
+[tool.poetry]
+packages = [
+    { include = "tracker_6d_vive", from = "../../components/" },
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

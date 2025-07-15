@@ -13,7 +13,6 @@ echo "正在创建并启动容器，并挂载当前目录..."
 docker run -it \
   --name operating_platform \
   --privileged \
-  --gpus all \
   --network host \
   -v "$(pwd)":/Operating-Platform \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
@@ -21,9 +20,8 @@ docker run -it \
   -e XDG_RUNTIME_DIR=/tmp \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
-  -e HF_HOME=/Operating-Platform/data/hf \
-  -e DOROBOT_HOME=~/DoRobot \
-  operating-platform:V1.2
+  -e DOROBOT_HOME=/root/DoRobot \
+  operating-platform:V1.4_ubuntu20
 
 # 3. 检查容器是否运行
 if [ "$(docker inspect -f '{{.State.Running}}' operating_platform 2>/dev/null)" == "true" ]; then

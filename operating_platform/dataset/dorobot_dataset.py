@@ -997,7 +997,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 for cam_key in self.meta.camera_keys:
                     img_dir = self._get_image_file_path(
                         episode_index=episode_index, image_key=cam_key, frame_index=0
-                    ).parent
+                    ).parent.parent
                     if img_dir.is_dir():
                         shutil.rmtree(img_dir)
 
