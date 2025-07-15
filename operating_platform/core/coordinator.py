@@ -21,7 +21,7 @@ from datetime import datetime
 from operating_platform.robot.robots.configs import RobotConfig
 from operating_platform.robot.robots.utils import make_robot_from_config, Robot, busy_wait, safe_disconnect
 from operating_platform.utils import parser
-from operating_platform.utils.utils import has_method, init_logging, log_say, get_current_git_branch
+from operating_platform.utils.utils import has_method, init_logging, log_say, get_current_git_branch, git_branch_log
 
 from operating_platform.utils.constants import DOROBOT_DATASET
 from operating_platform.dataset.dorobot_dataset import *
@@ -223,9 +223,9 @@ class Coordinator:
             dataset_path = DOROBOT_DATASET
 
             git_branch_name = get_current_git_branch()
-            if git_branch_name == "release":
+            if "release" in git_branch_name:
                 target_dir = dataset_path / date_str / "user" / repo_id
-            elif git_branch_name == "dev":
+            elif "dev"  in git_branch_name:
                 target_dir = dataset_path / date_str / "dev" / repo_id
             else:
                 target_dir = dataset_path / date_str / "dev" / repo_id
@@ -366,6 +366,7 @@ class ControlPipelineConfig:
 def main(cfg: ControlPipelineConfig):
 
     init_logging()
+    git_branch_log()
     logging.info(pformat(asdict(cfg)))
 
     daemon = Daemon(fps=DEFAULT_FPS)
