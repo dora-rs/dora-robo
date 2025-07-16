@@ -125,6 +125,9 @@ class Coordinator:
         self.heartbeat_interval = 2  # 心跳间隔(秒)
 
         self.recording = False
+        self.saveing = False
+
+        self.record_stop_return = {}
 
         self.cameras: dict[str, int] = {
             "image_top": 1,
@@ -257,17 +260,23 @@ class Coordinator:
             self.send_response('start_collection', "success")
         
         elif data.get('cmd') == 'finish_collection':
-            # 模拟处理完成采集
             print("处理完成采集命令...")
 
-            data = self.record.stop(save=True)
-            self.recording = False
+            if not self.saveing:
+                # 如果不在保存状态，立即停止记录并保存
+                self.record_stop_return = self.record.stop(save=True)
+                self.recording = False
 
-            # 准备响应数据
+            # 如果正在保存，循环等待直到 self.record_stop_return 有数据
+            while self.saveing and not self.record_stop_return:
+                time.sleep(0.1)  # 避免CPU过载，适当延迟
+
+            # 此时无论 saveing 状态如何，self.record_stop_return 已有有效数据
             response_data = {
                 "msg": "success",
-                "data": data,
+                "data": self.record_stop_return,
             }
+
             # 发送响应
             self.send_response('finish_collection', response_data['msg'], response_data)
         
