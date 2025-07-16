@@ -127,7 +127,7 @@ class Coordinator:
         self.recording = False
         self.saveing = False
 
-        self.record_stop_return = {}
+        self.record_stop_return = None
 
         self.cameras: dict[str, int] = {
             "image_top": 1,
@@ -264,11 +264,13 @@ class Coordinator:
 
             if not self.saveing:
                 # 如果不在保存状态，立即停止记录并保存
+                self.saveing= True
                 self.record_stop_return = self.record.stop(save=True)
                 self.recording = False
+                self.saveing= False
 
             # 如果正在保存，循环等待直到 self.record_stop_return 有数据
-            while self.saveing and not self.record_stop_return:
+            while self.saveing:
                 time.sleep(0.1)  # 避免CPU过载，适当延迟
 
             # 此时无论 saveing 状态如何，self.record_stop_return 已有有效数据
