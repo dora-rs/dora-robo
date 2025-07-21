@@ -6,14 +6,8 @@ nodes:
     outputs:
       - imu
       - pose
-
-  - id: dora-vive-print
-    path: dora_vive_print.py
-    inputs:
-      imu: dora-vive-tracker/imu
-      pose: dora-vive-tracker/pose
   
-  - id: dora-vive-visual
-    path: dora_vive_visual.py
+  - id: dora-vive-sn
+    path: dora_vive_sn.py
     inputs:
       pose: dora-vive-tracker/pose
