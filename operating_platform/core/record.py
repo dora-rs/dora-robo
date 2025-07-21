@@ -169,11 +169,11 @@ class Record:
 
         print("save_episode succcess, episode_index:", episode_index)
 
-                update_dataid_json(self.record_cfg.root, episode_index,  self.record_cmd)
-                if episode_index == 0 and self.dataset.meta.total_episodes == 1:
-                    update_common_record_json(self.record_cfg.root, self.record_cmd)
-                
-                print("update_dataid_json succcess")
+        update_dataid_json(self.record_cfg.root, episode_index,  self.record_cmd)
+        if episode_index == 0 and self.dataset.meta.total_episodes == 1:
+            update_common_record_json(self.record_cfg.root, self.record_cmd)
+        
+        print("update_dataid_json succcess")
 
         if self.record_cfg.push_to_hub:
             self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
