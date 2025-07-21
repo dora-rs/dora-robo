@@ -2,7 +2,7 @@ nodes:
   - id: dora-vive-tracker
     path: ../../components/tracker_6d_vive/dora_vive_tracker.py
     inputs:
-      tick: dora/timer/millis/10
+      tick: dora/timer/millis/33
     outputs:
       - imu
       - pose

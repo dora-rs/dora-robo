@@ -2,10 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 import math
+import os
 
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation as R
 from dora import Node
+
+
+
+GET_DEVICE_FROM = os.getenv("GET_DEVICE_FROM", "None") # SN
+DEVICE_SN = os.getenv("DEVICE_SN")
+
 
 
 logger = logging.getLogger(__name__)
@@ -15,6 +22,10 @@ class TransformVisualizer:
         self.axis_length = axis_length
         self.space_size = space_size
         self.fig = plt.figure(figsize=(10, 8))
+        
+        # 设置窗口标题
+        self.fig.canvas.manager.window.title(f"6D visual: {DEVICE_SN}")        
+
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.view_init(azim=-160)
         self._setup_plot()
@@ -115,12 +126,24 @@ class TransformVisualizer:
 def main():
     node = Node()
     visualizer = TransformVisualizer(space_size=2)
+
+    if GET_DEVICE_FROM == "SN":
+        if DEVICE_SN is not None:
+            filter_sn = DEVICE_SN
+        else:
+            raise ValueError
+    else:
+        filter_sn = None
     
     try:
         for event in node:
             if event["type"] == "INPUT" and event["id"] == "pose":
                 data = event["value"][0]
-                
+                serial_number = data.get("serial_number").as_py()
+
+                if filter_sn is not None and filter_sn != serial_number:
+                    continue
+
                 # 解析位置和旋转
                 position = np.array(data["position"].as_py())
                 rotation = data["rotation"].as_py()
