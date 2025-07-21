@@ -939,7 +939,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
         print(f"[DEBUG] 开始删除剧集: ep_idx={ep_idx}")
         
         if ep_idx == 0:
-            print(f"[WARNING] 检测到 ep_idx=0，即将删除整个目录树: {self.root}")
+            print(f"[WARNING] dorobot_dataset.py remove_episode(): 检测到 ep_idx=0，即将删除整个目录树: {self.root}")
             shutil.rmtree(self.root)
             print(f"[INFO] 目录树 {self.root} 已删除")
             return
@@ -990,7 +990,8 @@ class DoRobotDataset(torch.utils.data.Dataset):
     def clear_episode_buffer(self) -> None:
         episode_index = self.episode_buffer["episode_index"]
 
-        if episode_index == 0:
+        if episode_index == 0 and self.meta.total_episodes == 0:
+            print(f"[WARNING] dorobot_dataset.py clear_episode_buffer(): 检测到 ep_idx=0，即将删除整个目录树: {self.root}")
             shutil.rmtree(self.root)
         else:
             if self.image_writer is not None:
