@@ -208,7 +208,8 @@ class Coordinator:
             if self.recording == True:
                 # self.send_response('start_collection', "fail")
 
-                self.record.stop(save=False)
+                self.record.stop()
+                self.record.discard()
                 self.recording = False
 
 
