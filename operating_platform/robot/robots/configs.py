@@ -25,6 +25,7 @@ from operating_platform.robot.robots.com_configs.cameras import (
 )
 
 from operating_platform.robot.robots.com_configs.motors import (
+    PikaMotorsBusConfig,
     PiperMotorsBusConfig,
     DynamixelMotorsBusConfig,
     FeetechMotorsBusConfig,
@@ -361,3 +362,58 @@ class RealmanRobotConfig(RobotConfig):
     )
 
     mock: bool = False
+
+
+@RobotConfig.register_subclass("pika_v1")
+@dataclass
+class PikaV1RobotConfig(RobotConfig):
+    right_leader_arm = PikaMotorsBusConfig(
+        port="right",
+        motors={
+            "pose_x":       [1, "pika-pose"],
+            "pose_y":       [2, "pika-pose"],
+            "pose_z":       [3, "pika-pose"],
+            "pose_quat_x":  [4, "pika-pose"],
+            "pose_quat_y":  [5, "pika-pose"],
+            "pose_quat_z":  [6, "pika-pose"],
+            "pose_quat_w":  [7, "pika-pose"],
+            "gripper":      [8, "pika-gripper"],
+        },
+    )
+
+    left_leader_arm = PiperMotorsBusConfig(
+        port="left",
+        motors={
+            "pose_x":       [1, "pika-pose"],
+            "pose_y":       [2, "pika-pose"],
+            "pose_z":       [3, "pika-pose"],
+            "pose_quat_x":  [4, "pika-pose"],
+            "pose_quat_y":  [5, "pika-pose"],
+            "pose_quat_z":  [6, "pika-pose"],
+            "pose_quat_w":  [7, "pika-pose"],
+            "gripper":      [8, "pika-gripper"],
+        },
+    )
+
+    cameras: dict[str, CameraConfig] = field(
+        default_factory=lambda: {
+            "image_right_fisheye": OpenCVCameraConfig(
+                camera_index=1,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+            "image_left_fisheye": OpenCVCameraConfig(
+                camera_index=2,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+            "image_right_tac_l": OpenCVCameraConfig(
+                camera_index=3,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+        }
+    )

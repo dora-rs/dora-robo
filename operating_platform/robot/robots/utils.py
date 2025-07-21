@@ -18,6 +18,7 @@ from operating_platform.robot.robots.configs import (
     AlohaRobotConfig,
     ManipulatorRobotConfig,
     RobotConfig,
+    PikaV1RobotConfig,
     AdoraRobotConfig,
     AdoraDualRobotConfig,
     RealmanRobotConfig,
@@ -118,6 +119,10 @@ def make_robot_from_config(config: RobotConfig):
         from operating_platform.robot.robots.aloha_manipulator import AlohaManipulator
         print("In AlohaManipulator")
         return AlohaManipulator(config)
+    elif isinstance(config, PikaV1RobotConfig):
+        from operating_platform.robot.robots.pika_v1.manipulator import PikaV1Manipulator
+        print("In PikaV1Manipulator")
+        return PikaV1Manipulator(config)
     
     # elif isinstance(config, AdoraDualRobotConfig):
     #     from lerobot.common.robot_devices.robots.adora_dual_manipulator import AdoraDualManipulator
