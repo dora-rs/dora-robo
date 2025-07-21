@@ -2,7 +2,7 @@ nodes:
   - id: dora-vive-tracker
     path: dora_vive_tracker.py
     inputs:
-      tick: dora/timer/millis/10
+      tick: dora/timer/millis/33
     outputs:
       - imu
       - pose
@@ -19,7 +19,7 @@ nodes:
       pose: dora-vive-tracker/pose
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC1T35300D5
+      DEVICE_SN: LHR-6FE2BEE6
 
   - id: dora-vive-visual-2
     path: dora_vive_visual.py
@@ -27,4 +27,4 @@ nodes:
       pose: dora-vive-tracker/pose
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC1T35300D5
+      DEVICE_SN: LHR-B93C7988

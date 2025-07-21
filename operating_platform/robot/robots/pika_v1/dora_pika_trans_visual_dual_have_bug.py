@@ -1,13 +1,17 @@
+"""
+Dual Device 6D Transformation Visualizer
+
+This module visualizes 3D transformations from two devices (left and right) using
+matplotlib 3D plotting with SLERP interpolation for smooth rotations.
+"""
+
+import os
+import math
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import logging
-import math
-import os
-import pyarrow as pa
-
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation as R
-from scipy.spatial.transform import Slerp
 from dora import Node
 from pose_utils import xyzQuaternion2matrix, xyzrpy2Mat, matrixToXYZQuaternion
 
@@ -15,53 +19,91 @@ logger = logging.getLogger(__name__)
 RIGHT_SN = os.getenv("RIGHT_SN")
 LEFT_SN = os.getenv("LEFT_SN")
 
+
 def quat_slerp(q0, q1, t):
-    """手动实现四元数 SLERP 插值"""
+    """
+    Manually implement quaternion SLERP interpolation.
+    
+    Args:
+        q0 (np.ndarray): First quaternion in [x, y, z, w] format.
+        q1 (np.ndarray): Second quaternion in [x, y, z, w] format.
+        t (float): Interpolation parameter in [0, 1].
+        
+    Returns:
+        np.ndarray: Interpolated quaternion.
+    """
     dot = np.dot(q0, q1)
+    
+    # Ensure shortest path interpolation
     if dot < 0:
         q1 = -q1
         dot = -dot
+    
+    # Linear interpolation for small angles
     if dot > 0.9995:
         return (1 - t) * q0 + t * q1
+    
+    # Spherical interpolation
     theta = np.arccos(dot) * t
     sin_theta = np.sin(theta)
     sin_full = np.sin(theta / t)
+    
     return (np.sin(theta - theta / t) * q0 + sin_theta * q1) / sin_full
 
+
 class TransformVisualizer:
+    """
+    Visualizer for 3D transformations with trajectory tracking.
+    
+    Attributes:
+        axis_length: Length of coordinate frame axes.
+        space_size: Size of 3D visualization space.
+        transforms: Dictionary storing current transformations.
+        trajectory_points: Dictionary storing trajectory points.
+        device_colors: Color configuration for left/right devices.
+    """
+    
     def __init__(self, axis_length=0.1, space_size=2):
+        """Initialize 3D visualization environment."""
         self.axis_length = axis_length
         self.space_size = space_size
         self.fig = plt.figure(figsize=(12, 10))
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.view_init(azim=-160)
-        self._setup_plot()
         
-        # 存储多个设备的变换
+        # Initialize transform data
         self.transforms = {}  # {device_id: transform_matrix}
         self.trajectory_points = {}  # {device_id: [points]}
+        
+        # Device color configuration
+        self.device_colors = {
+            'left': {'x': 'cyan', 'y': 'lime', 'z': 'deepskyblue'},
+            'right': {'x': 'magenta', 'y': 'yellow', 'z': 'orange'}
+        }
+        
         self.T_zero = None
-        self.device_colors = {'left': 'cyan', 'right': 'magenta'}  # 设备显示颜色
+        self._setup_plot()
 
     def _setup_plot(self):
-        """初始化3D坐标系和图形设置"""
+        """Initialize 3D coordinate system and visualization settings."""
+        # Plot base frame
         base_T = np.eye(4)
-        self.plot_transform(base_T, axis_length=2.0, label="Base Frame", color='black')
+        self.plot_transform(base_T, axis_length=2.0, label="Base Frame")
         
-        # 设置坐标轴属性
+        # Configure plot appearance
         self.ax.set_xlabel('X')
         self.ax.set_ylabel('Y')
         self.ax.set_zlabel('Z')
         self.ax.set_title("Dual Device 6D Visualization")
         self.ax.set_box_aspect([1, 1, 1])
         
-        # 设置坐标范围
+        # Set coordinate limits
         limits = [-self.space_size, self.space_size]
         self.ax.set_xlim(limits)
         self.ax.set_ylim(limits)
         self.ax.set_zlim(limits)
         
-        # 添加图例说明
+        # Add legend
         self.ax.legend([
             plt.Line2D([0], [0], color='cyan', lw=2),
             plt.Line2D([0], [0], color='magenta', lw=2),
@@ -72,34 +114,52 @@ class TransformVisualizer:
         plt.ion()
         plt.show()
 
-    def plot_transform(self, T, axis_length=None, label=None, color='red'):
-        """绘制单个坐标系变换，增加颜色参数"""
+    def plot_transform(self, T, axis_length=None, label=None, device_id='default'):
+        """
+        Plot a coordinate frame transformation.
+        
+        Args:
+            T: 4x4 transformation matrix.
+            axis_length: Length of axis lines.
+            label: Text label for the frame.
+            device_id: Identifier for device-specific colors.
+        """
         axis_length = axis_length or self.axis_length
         origin = T[:3, 3]
         x_axis = origin + T[:3, 0] * axis_length
         y_axis = origin + T[:3, 1] * axis_length
         z_axis = origin + T[:3, 2] * axis_length
         
-        # 绘制轴线（使用传入的颜色）
+        # Get device-specific colors
+        colors = self.device_colors.get(device_id, {'x': 'r', 'y': 'g', 'z': 'b'})
+        
+        # Plot each axis
         self.ax.plot([origin[0], x_axis[0]], 
                     [origin[1], x_axis[1]], 
                     [origin[2], x_axis[2]], 
-                    c=color, linewidth=2, alpha=0.8)
+                    c=colors['x'], linewidth=2, alpha=0.8)
+        
         self.ax.plot([origin[0], y_axis[0]], 
                     [origin[1], y_axis[1]], 
                     [origin[2], y_axis[2]], 
-                    c=color, linewidth=2, alpha=0.8)
+                    c=colors['y'], linewidth=2, alpha=0.8)
+        
         self.ax.plot([origin[0], z_axis[0]], 
                     [origin[1], z_axis[1]], 
                     [origin[2], z_axis[2]], 
-                    c=color, linewidth=2, alpha=0.8)
+                    c=colors['z'], linewidth=2, alpha=0.8)
         
-        # 添加标签
         if label:
             self.ax.text(*origin, label, color='k', fontsize=8)
 
     def plot_trajectory(self, device_id, color='gray'):
-        """绘制特定设备的轨迹"""
+        """
+        Plot device trajectory.
+        
+        Args:
+            device_id: Identifier for the device.
+            color: Color for trajectory line.
+        """
         if device_id not in self.trajectory_points or not self.trajectory_points[device_id]:
             return
             
@@ -108,47 +168,74 @@ class TransformVisualizer:
                     color=color, linewidth=1, alpha=0.5)
 
     def update_visualization(self):
-        """更新可视化界面，显示所有设备"""
+        """Update the visualization with current transformations."""
         self.ax.cla()
         self._setup_plot()
         
-        # 绘制所有设备的当前姿态
+        # Redraw all transforms and trajectories
         for device_id, transform in self.transforms.items():
             if transform is not None:
-                color = self.device_colors.get(device_id, 'red')
-                label = f"{device_id.capitalize()} Pose"
-                self.plot_transform(transform, label=label, color=color)
-                self.plot_trajectory(device_id, color=color)
+                # Get device-specific color configuration
+                device_color = self.device_colors.get(
+                    device_id, {'x': 'r', 'y': 'g', 'z': 'b'}
+                )
+                
+                # Plot transform with device color
+                self.plot_transform(
+                    transform, 
+                    label=f"{device_id.capitalize()} Pose",
+                    device_id=device_id
+                )
+                
+                # Plot trajectory with x-axis color
+                trajectory_color = device_color['x']
+                self.plot_trajectory(device_id, color=trajectory_color)
         
-        # 刷新画布
+        # Refresh display
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
     def set_initial_transform(self, T_initial):
-        """设置初始变换作为基准"""
+        """
+        Set initial transform as reference.
+        
+        Args:
+            T_initial: 4x4 transformation matrix.
+        """
         self.T_zero = T_initial.copy()
 
     def update_transform(self, device_id, T_world):
-        """更新指定设备的变换"""
+        """
+        Update device transformation.
+        
+        Args:
+            device_id: Identifier for the device.
+            T_world: New world transformation matrix.
+        """
         if self.T_zero is None:
             logger.warning("T_zero not set. Cannot update transform.")
             return
             
-        # 计算相对变换
+        # Calculate relative transform
         T_relative = np.linalg.inv(self.T_zero) @ T_world
         
-        # 更新变换数据
+        # Update transform data
         self.transforms[device_id] = T_relative
         
-        # 记录轨迹点
+        # Record trajectory point
         if device_id not in self.trajectory_points:
             self.trajectory_points[device_id] = []
         self.trajectory_points[device_id].append(T_relative[:3, 3])
         
-        # 更新可视化
+        # Update visualization
         self.update_visualization()
 
+
 def main():
+    """Main function to run the visualization node."""
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Starting dual device visualization node")
+    
     node = Node()
     visualizer = TransformVisualizer(space_size=2)
     
@@ -224,18 +311,17 @@ def main():
                     device_id = 'left' if is_left else 'right' if is_right else None
                     if device_id:
                         visualizer.update_transform(device_id, result_mat)
-                        # node.send_output(f"{device_id}_pose", pa.array(result_mat.ravel()))
             
             elif event["type"] == "STOP":
                 break
                 
     except KeyboardInterrupt:
-        logger.info("\nExiting dora_pika_visual...")
+        logger.info("\nExiting visualization node...")
     except Exception as e:
-        logger.exception("Dora error: %s", e)
+        logger.exception("Node error: %s", e)
     finally:
         plt.close(visualizer.fig)
 
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()
