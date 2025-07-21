@@ -104,6 +104,7 @@ class Record:
         self.fps = fps
         self.record_cmd = record_cmd
         self.last_record_episode_index = 0
+        self.record_complete = False
 
         if self.record_cfg.resume:
             self.dataset = DoRobotDataset(
@@ -153,57 +154,60 @@ class Record:
                     busy_wait(1 / self.fps - dt_s)
 
 
-    def stop(self, save: bool) -> dict:
+    def stop(self):
         if self.running == True:
             self.running = False
             self.thread.join()
 
-            if save:
-                print("will save_episode")
-
-                episode_index = self.dataset.save_episode()
-
-                print("save_episode succcess, episode_index:", episode_index)
-
-                update_dataid_json(self.record_cfg.root, episode_index,  self.record_cmd)
-                if episode_index == 0 and self.dataset.meta.total_episodes == 1:
-                    update_common_record_json(self.record_cfg.root, self.record_cmd)
-                
-                print("update_dataid_json succcess")
-
-                if self.record_cfg.push_to_hub:
-                    self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
-
-                file_size = get_data_size(self.record_cfg.root, self.record_cmd)
-                file_duration = get_data_duration(self.record_cfg.root, self.record_cmd)
-
-                print("get_data_size succcess, file_size:", file_size)
-
-                data = {
-                    "file_message": {
-                        "file_name": self.record_cfg.repo_id,
-                        "file_local_path": str(self.record_cfg.root),
-                        "file_size": str(file_size),
-                        "file_duration": str(file_duration),
-                    },
-                    "verification": {
-                        "file_integrity": "pass",
-                        "camera_frame_rate": "pass",
-                    }
-                }
-
-                self.last_record_episode_index = episode_index
-
-                return data
-            else:
-                self.dataset.clear_episode_buffer()
-            
-        elif self.running == False:
-            delete_dataid_json(self.record_cfg.root, self.last_record_episode_index, self.record_cmd)
-            self.dataset.remove_episode(self.last_record_episode_index)
-
         # stop_recording(robot, listener, record_cfg.display_cameras)
         # log_say("Stop recording", record_cfg.play_sounds, blocking=True)
+
+    def save(self) -> dict:
+        print("will save_episode")
+
+        episode_index = self.dataset.save_episode()
+
+        print("save_episode succcess, episode_index:", episode_index)
+
+        update_dataid_json(self.record_cfg.root, episode_index,  self.record_cmd)
+        if episode_index == 0 and self.dataset.meta.total_episodes == 1:
+            update_common_record_json(self.record_cfg.root, self.record_cmd)
+        
+        print("update_dataid_json succcess")
+
+        if self.record_cfg.push_to_hub:
+            self.dataset.push_to_hub(tags=self.record_cfg.tags, private=self.record_cfg.private)
+
+        file_size = get_data_size(self.record_cfg.root, self.record_cmd)
+        file_duration = get_data_duration(self.record_cfg.root, self.record_cmd)
+
+        print("get_data_size succcess, file_size:", file_size)
+
+        data = {
+            "file_message": {
+                "file_name": self.record_cfg.repo_id,
+                "file_local_path": str(self.record_cfg.root),
+                "file_size": str(file_size),
+                "file_duration": str(file_duration),
+            },
+            "verification": {
+                "file_integrity": "pass",
+                "camera_frame_rate": "pass",
+            }
+        }
+
+        self.record_complete = True
+        self.last_record_episode_index = episode_index
+
+        return data
+
+    def discard(self):
+        if self.record_complete == True:
+            delete_dataid_json(self.record_cfg.root, self.last_record_episode_index, self.record_cmd)
+            self.dataset.remove_episode(self.last_record_episode_index)
+        else:
+            self.dataset.clear_episode_buffer()
+
 
 # def stop_recording(robot, listener, display_cameras):
 #     robot.disconnect()
