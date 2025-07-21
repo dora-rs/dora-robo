@@ -105,6 +105,7 @@ class Record:
         self.record_cmd = record_cmd
         self.last_record_episode_index = 0
         self.record_complete = False
+        self.save_data = None
 
         if self.record_cfg.resume:
             self.dataset = DoRobotDataset(
@@ -199,7 +200,7 @@ class Record:
         self.record_complete = True
         self.last_record_episode_index = episode_index
 
-        return data
+        self.save_data = data
 
     def discard(self):
         if self.record_complete == True:
