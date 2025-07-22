@@ -24,6 +24,13 @@ class MotorsBusConfig(draccus.ChoiceRegistry, abc.ABC):
     def type(self) -> str:
         return self.get_choice_name(self.__class__)
 
+@MotorsBusConfig.register_subclass("pika")
+@dataclass
+class PikaMotorsBusConfig(MotorsBusConfig):
+    port: str
+    motors: dict[str, tuple[int, str]]
+    mock: bool = False
+
 @MotorsBusConfig.register_subclass("piper")
 @dataclass
 class PiperMotorsBusConfig(MotorsBusConfig):

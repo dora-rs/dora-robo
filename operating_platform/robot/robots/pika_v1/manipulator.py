@@ -141,7 +141,7 @@ def make_cameras_from_configs(camera_configs: dict[str, CameraConfig]) -> list[C
 
 
 
-class AlohaManipulator:
+class PikaV1Manipulator:
     def __init__(self, config: AlohaRobotConfig):
         self.config = config
         self.robot_type = self.config.type
@@ -363,7 +363,6 @@ class AlohaManipulator:
         follower_gripper = {}
         for name in self.follower_arms:
             for match_name in recv_gripper:
-                if name in match_name:
                     now = time.perf_counter()
 
                     byte_array = np.zeros(1, dtype=np.float32)
