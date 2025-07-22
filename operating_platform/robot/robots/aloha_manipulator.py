@@ -363,6 +363,7 @@ class AlohaManipulator:
         follower_gripper = {}
         for name in self.follower_arms:
             for match_name in recv_gripper:
+                if name in match_name:
                     now = time.perf_counter()
 
                     byte_array = np.zeros(1, dtype=np.float32)
