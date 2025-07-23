@@ -6,7 +6,7 @@ import os
 import ctypes
 import platform
 import sys
-
+import json
 import numpy as np
 import torch
 
@@ -29,36 +29,58 @@ from operating_platform.robot.robots.camera import Camera
 
 
 # IPC Address
-ipc_address = "ipc:///tmp/dora-zeromq"
+pika_ipc_address = "ipc:///tmp/dr-robot-pika-v1"
+vive_ipc_address = "ipc:///tmp/dr-component-vive"
 
-context = zmq.Context()
-socket = context.socket(zmq.PAIR)
-socket.connect(ipc_address)
-socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
 
-running_server = True
-recv_images = {}  # 缓存每个 event_id 的最新帧
-recv_jointstats = {} 
+recv_images = {}
 recv_pose = {}
+recv_rotation = {}
 recv_gripper = {}
 lock = threading.Lock()  # 线程锁
+zmq_context = zmq.Context()
 
-def recv_server():
+pika_socket = zmq_context.socket(zmq.PAIR)
+pika_socket.bind(pika_ipc_address)
+pika_socket.setsockopt(zmq.RCVTIMEO, 300)
+pika_running_server = True
+
+def pika_recv_server():
     """接收数据线程"""
-    while running_server:
+    while pika_running_server:
         try:
 
-            message_parts = socket.recv_multipart()
+            message_parts = pika_socket.recv_multipart()
             if len(message_parts) < 2:
                 continue  # 协议错误
 
             event_id = message_parts[0].decode('utf-8')
             buffer_bytes = message_parts[1]
+            metadata = json.loads(message_parts[2].decode('utf-8'))
+            
 
             if 'image' in event_id:
                 # 解码图像
                 img_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
-                frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                encoding = metadata["encoding"].lower()
+                width = metadata["width"]
+                height = metadata["height"]
+
+                if encoding == "bgr8":
+                    channels = 3
+                    frame = (
+                        img_array.reshape((height, width, channels))
+                        .copy()  # Copy So that we can add annotation on the image
+                    )
+                elif encoding == "rgb8":
+                    channels = 3
+                    frame = (img_array.reshape((height, width, channels)))
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+                elif encoding in ["jpeg", "jpg", "jpe", "bmp", "webp", "png"]:
+                    channels = 3
+                    frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
                 if frame is not None:
@@ -66,30 +88,56 @@ def recv_server():
                         # print(f"Received event_id = {event_id}")
                         recv_images[event_id] = frame
 
-            if 'jointstat' in event_id:
-                joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if joint_array is not None:
-                    with lock:
-                        # print(f"Received event_id = {event_id}")
-                        # print(f"Received joint_array = {joint_array}")
-                        recv_jointstats[event_id] = joint_array
+            # if 'gripper' in event_id:
+            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+            #     if gripper_array is not None:
+            #         with lock:
+            #             recv_gripper[event_id] = gripper_array
+
+
+        except zmq.Again:
+            print(f"Pika Received Timeout")
+            continue
+        except Exception as e:
+            print("recv error:", e)
+            break
+
+vive_socket = zmq_context.socket(zmq.PAIR)
+vive_socket.bind(vive_ipc_address)
+vive_socket.setsockopt(zmq.RCVTIMEO, 300)
+vive_running_server = True
+
+def vive_recv_server():
+    """接收数据线程"""
+    while vive_running_server:
+        try:
+
+            message_parts = vive_socket.recv_multipart()
+            if len(message_parts) < 2:
+                continue  # 协议错误
+
+            event_id = message_parts[0].decode('utf-8')
+            buffer_bytes = message_parts[1]
 
             if 'pose' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if pose_array is not None:
+                    # print(f"Received pose data for event_id: {event_id}")
+                    # print(f"Pose array shape: {pose_array.shape}")
+                    # print(f"Pose array values: {pose_array}")
                     with lock:
                         recv_pose[event_id] = pose_array
-
-            if 'gripper' in event_id:
-                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if gripper_array is not None:
+                # else:
+                #     print(f"Failed to parse pose data for event_id: {event_id}")
+            
+            if 'rotation' in event_id:
+                rotation_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+                if rotation_array is not None:
                     with lock:
-                        recv_gripper[event_id] = gripper_array
-
+                        recv_rotation[event_id] = rotation_array
 
         except zmq.Again:
-            # 接收超时，继续循环
-            print(f"Received Timeout")
+            print(f"VIVE Received Timeout")
             continue
         except Exception as e:
             print("recv error:", e)
@@ -153,8 +201,11 @@ class PikaV1Manipulator:
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
 
-        recv_thread = threading.Thread(target=recv_server, daemon=True)
-        recv_thread.start()
+        pika_recv_thread = threading.Thread(target=pika_recv_server, daemon=True)
+        pika_recv_thread.start()
+
+        vive_recv_thread = threading.Thread(target=vive_recv_server, daemon=True)
+        vive_recv_thread.start()
         
         self.is_connected = False
         self.logs = {}
@@ -195,65 +246,93 @@ class PikaV1Manipulator:
         }
     
     def connect(self):
-        timeout = 5  # 超时时间（秒）
+        timeout = 50  # 统一的超时时间（秒）
         start_time = time.perf_counter()
 
+        # 定义所有需要等待的条件及其错误信息
+        conditions = [
+            (
+                lambda: all(name in recv_images for name in self.cameras),
+                lambda: [name for name in self.cameras if name not in recv_images],
+                "等待摄像头图像超时"
+            ),
+            (
+                lambda: any(
+                    any(name in key for key in recv_rotation)
+                    for name in self.follower_arms
+                ),
+                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_rotation)],
+                "等待旋转角度数据超时"
+            ),
+            (
+                lambda: any(
+                    any(name in key for key in recv_pose)
+                    for name in self.follower_arms
+                ),
+                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_pose)],
+                "等待机械臂末端位姿超时"
+            ),
+            # (
+            #     lambda: any(
+            #         any(name in key for key in recv_gripper)
+            #         for name in self.follower_arms
+            #     ),
+            #     lambda: [name for name in self.follower_arms if not any(name in key for key in recv_gripper)],
+            #     "等待机械臂夹爪超时"
+            # )
+        ]
+
+        # 跟踪每个条件是否已完成
+        completed = [False] * len(conditions)
+
         while True:
-            # 检查是否已获取所有摄像头的图像
-            if all(name in recv_images for name in self.cameras):
+            # 检查每个未完成的条件
+            for i in range(len(conditions)):
+                if not completed[i]:
+                    condition_func = conditions[i][0]
+                    if condition_func():
+                        completed[i] = True
+
+            # 如果所有条件都已完成，退出循环
+            if all(completed):
                 break
 
-            # 超时检测
+            # 检查是否超时
             if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("等待摄像头图像超时")
+                failed_messages = []
+                for i in range(len(completed)):
+                    if not completed[i]:
+                        condition_func, get_missing, base_msg = conditions[i]
+                        missing = get_missing()
 
-            # 可选：减少CPU占用
-            time.sleep(0.01)
-        
-        start_time = time.perf_counter()
-        while True:
-            # 检查是否已获取所有机械臂的关节角度
-            if any(
-                any(name in key for key in recv_jointstats)
-                for name in self.follower_arms
-            ):
-                break
+                        # 重新检查条件是否满足（可能刚好在最后一次检查后满足）
+                        if condition_func():
+                            completed[i] = True
+                            continue
 
-            # 超时检测
-            if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("等待机械臂关节数据超时")
+                        # 如果没有 missing，也视为满足
+                        if not missing:
+                            completed[i] = True
+                            continue
 
-            # 可选：减少CPU占用
-            time.sleep(0.01)
+                        # 计算已接收的项
+                        if i == 0:
+                            received = [name for name in self.cameras if name not in missing]
+                        else:
+                            received = [name for name in self.follower_arms if name not in missing]
 
-        start_time = time.perf_counter()
-        while True:
-            if any(
-                any(name in key for key in recv_pose)
-                for name in self.follower_arms
-            ):
-                break
+                        # 构造错误信息
+                        msg = f"{base_msg}: 未收到 [{', '.join(missing)}]; 已收到 [{', '.join(received)}]"
+                        failed_messages.append(msg)
 
-            # 超时检测
-            if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("等待机械臂末端位姿超时")
+                # 如果所有条件都已完成，break
+                if not failed_messages:
+                    break
 
-            # 可选：减少CPU占用
-            time.sleep(0.01)
+                # 抛出超时异常
+                raise TimeoutError(f"连接超时，未满足的条件: {'; '.join(failed_messages)}")
 
-        start_time = time.perf_counter()
-        while True:
-            if any(
-                any(name in key for key in recv_gripper)
-                for name in self.follower_arms
-            ):
-                break
-
-            # 超时检测
-            if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("等待机械臂夹爪超时")
-
-            # 可选：减少CPU占用
+            # 减少 CPU 占用
             time.sleep(0.01)
 
         self.is_connected = True
@@ -328,73 +407,73 @@ class PikaV1Manipulator:
         if not record_data:
             return
 
-        follower_joint = {}
-        for name in self.follower_arms:
-            for match_name in recv_jointstats:
-                if name in match_name:
-                    now = time.perf_counter()
-
-                    byte_array = np.zeros(6, dtype=np.float32)
-                    joint_read = recv_jointstats[match_name]
-
-                    byte_array[:6] = joint_read[:6]
-                    byte_array = np.round(byte_array, 3)
-                    
-                    follower_joint[name] = torch.from_numpy(byte_array)
-
-                    self.logs[f"read_follower_{name}_joint_dt_s"] = time.perf_counter() - now
-
         follower_pos = {}
         for name in self.follower_arms:
             for match_name in recv_pose:
                 if name in match_name:
                     now = time.perf_counter()
 
-                    byte_array = np.zeros(6, dtype=np.float32)
+                    byte_array = np.zeros(3, dtype=np.float32)
                     pose_read = recv_pose[match_name]
 
-                    byte_array[:6] = pose_read[:]
+                    byte_array[:3] = pose_read[:]
                     byte_array = np.round(byte_array, 3)
                     
                     follower_pos[name] = torch.from_numpy(byte_array)
 
                     self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
 
-        follower_gripper = {}
+        follower_rotation = {}
         for name in self.follower_arms:
-            for match_name in recv_gripper:
+            for match_name in recv_rotation:
+                if name in match_name:
                     now = time.perf_counter()
 
-                    byte_array = np.zeros(1, dtype=np.float32)
-                    gripper_read = recv_gripper[match_name]
+                    byte_array = np.zeros(4, dtype=np.float32)
+                    rotation_read = recv_rotation[match_name]
 
-                    byte_array[:1] = gripper_read[:]
+                    byte_array[:4] = rotation_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    follower_gripper[name] = torch.from_numpy(byte_array)
+                    follower_rotation[name] = torch.from_numpy(byte_array)
 
-                    self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
+                    self.logs[f"read_follower_{name}_rotation_dt_s"] = time.perf_counter() - now
+
+        # follower_gripper = {}
+        # for name in self.follower_arms:
+        #     for match_name in recv_gripper:
+        #             now = time.perf_counter()
+
+        #             byte_array = np.zeros(1, dtype=np.float32)
+        #             gripper_read = recv_gripper[match_name]
+
+        #             byte_array[:1] = gripper_read[:]
+        #             byte_array = np.round(byte_array, 3)
+                    
+        #             follower_gripper[name] = torch.from_numpy(byte_array)
+
+        #             self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
 
         #记录当前关节角度
         state = []
         for name in self.follower_arms:
-            if name in follower_joint:
-                state.append(follower_joint[name])
             if name in follower_pos:
                 state.append(follower_pos[name])
-            if name in follower_gripper:
-                state.append(follower_gripper[name])
+            if name in follower_rotation:
+                state.append(follower_rotation[name])
+            # if name in follower_gripper:
+            #     state.append(follower_gripper[name])
         state = torch.cat(state)
 
         #将关节目标位置添加到 action 列表中
         action = []
         for name in self.follower_arms:
-            if name in follower_joint:
-                action.append(follower_joint[name])
             if name in follower_pos:
                 action.append(follower_pos[name])
-            if name in follower_gripper:
-                action.append(follower_gripper[name])
+            if name in follower_rotation:
+                action.append(follower_rotation[name])
+            # if name in follower_gripper:
+            #     action.append(follower_gripper[name])
         action = torch.cat(action)
 
         # Capture images from cameras
@@ -581,7 +660,10 @@ class PikaV1Manipulator:
         #     self.cameras[name].disconnect()
 
         self.is_connected = False
-        running_server = False
+        global pika_running_server
+        global vive_running_server
+        pika_running_server = False
+        vive_running_server = False
         
 
     def __del__(self):

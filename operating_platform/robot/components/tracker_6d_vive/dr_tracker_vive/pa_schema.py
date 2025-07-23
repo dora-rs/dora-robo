@@ -1,7 +1,7 @@
 import pyarrow as pa
 
-pa_vec3 = pa.list_(pa.float64(), 3)  # x, y, z
-pa_quaternion = pa.list_(pa.float64(), 4)  # w, x, y, z
+pa_vec3 = pa.list_(pa.float32(), 3)  # x, y, z
+pa_quaternion = pa.list_(pa.float32(), 4)  # w, x, y, z
 
 # 定义 imu_schema
 pa_imu_fields = [

@@ -385,11 +385,11 @@ def main(cfg: ControlPipelineConfig):
     daemon = Daemon(fps=DEFAULT_FPS)
     daemon.start(cfg.robot)
 
-    coordinator = Coordinator(daemon)
-    coordinator.start()
+    # coordinator = Coordinator(daemon)
+    # coordinator.start()
 
-    coordinator.stream_info(daemon.cameras_info)
-    coordinator.update_stream_info_to_server()
+    # coordinator.stream_info(daemon.cameras_info)
+    # coordinator.update_stream_info_to_server()
 
     try:
         while True:
@@ -402,7 +402,7 @@ def main(cfg: ControlPipelineConfig):
                     img = cv2.cvtColor(observation[key].numpy(), cv2.COLOR_RGB2BGR) 
 
                     name = key[len("observation.images."):]
-                    coordinator.update_stream(name, img)
+                    # coordinator.update_stream(name, img)
 
                     if not is_headless():
                         # print(f"will show image, name:{name}")
@@ -418,7 +418,7 @@ def main(cfg: ControlPipelineConfig):
 
     finally:
         daemon.stop()
-        coordinator.stop()
+        # coordinator.stop()
         cv2.destroyAllWindows()
     
 

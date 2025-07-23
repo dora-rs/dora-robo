@@ -370,28 +370,28 @@ class PikaV1RobotConfig(RobotConfig):
     right_leader_arm = PikaMotorsBusConfig(
         port="right",
         motors={
-            "pose_x":       [1, "pika-pose"],
-            "pose_y":       [2, "pika-pose"],
-            "pose_z":       [3, "pika-pose"],
-            "pose_quat_x":  [4, "pika-pose"],
-            "pose_quat_y":  [5, "pika-pose"],
-            "pose_quat_z":  [6, "pika-pose"],
-            "pose_quat_w":  [7, "pika-pose"],
-            "gripper":      [8, "pika-gripper"],
+            "pose_x":           [1, "pika-pose"],
+            "pose_y":           [2, "pika-pose"],
+            "pose_z":           [3, "pika-pose"],
+            "rotation_quat_w":  [4, "pika-pose"],
+            "rotation_quat_x":  [5, "pika-pose"],
+            "rotation_quat_y":  [6, "pika-pose"],
+            "rotation_quat_z":  [7, "pika-pose"],
+            # "gripper":          [8, "pika-gripper"],
         },
     )
 
     left_leader_arm = PiperMotorsBusConfig(
         port="left",
         motors={
-            "pose_x":       [1, "pika-pose"],
-            "pose_y":       [2, "pika-pose"],
-            "pose_z":       [3, "pika-pose"],
-            "pose_quat_x":  [4, "pika-pose"],
-            "pose_quat_y":  [5, "pika-pose"],
-            "pose_quat_z":  [6, "pika-pose"],
-            "pose_quat_w":  [7, "pika-pose"],
-            "gripper":      [8, "pika-gripper"],
+            "pose_x":           [1, "pika-pose"],
+            "pose_y":           [2, "pika-pose"],
+            "pose_z":           [3, "pika-pose"],
+            "rotation_quat_w":  [4, "pika-pose"],
+            "rotation_quat_x":  [5, "pika-pose"],
+            "rotation_quat_y":  [6, "pika-pose"],
+            "rotation_quat_z":  [7, "pika-pose"],
+            # "gripper":          [8, "pika-gripper"],
         },
     )
 

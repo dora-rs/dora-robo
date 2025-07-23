@@ -1,6 +1,6 @@
 nodes:
   - id: dora-vive-tracker
-    path: dora_vive_tracker.py
+    path: dr_tracker_vive/tracker.py
     inputs:
       tick: dora/timer/millis/33
     outputs:
@@ -8,6 +8,6 @@ nodes:
       - pose
   
   - id: dora-vive-sn
-    path: dora_vive_sn.py
+    path: dr_tracker_vive/sn.py
     inputs:
       pose: dora-vive-tracker/pose

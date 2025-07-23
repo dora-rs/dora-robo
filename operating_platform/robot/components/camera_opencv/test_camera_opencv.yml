@@ -6,12 +6,12 @@ nodes:
     outputs:
       - image
     env:
-      CAPTURE_PATH: 4
+      CAPTURE_PATH: 0
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
 
   - id: plot
-    path: opencv-plot
+    path: plot.py
     inputs:
       image:
         source: camera-opencv/image
