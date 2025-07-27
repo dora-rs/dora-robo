@@ -25,7 +25,7 @@ from operating_platform.robot.robots.configs import AlohaRobotConfig
 from operating_platform.robot.robots.com_configs.cameras import CameraConfig, OpenCVCameraConfig
 
 from operating_platform.robot.robots.camera import Camera
-
+from operating_platform.robot.robots.pika_v1.pika_trans_visual_dual import Transformer
 
 
 # IPC Address
@@ -194,24 +194,27 @@ class PikaV1Manipulator:
         self.config = config
         self.robot_type = self.config.type
 
-
         self.follower_arms = {}
         self.follower_arms['right'] = self.config.right_leader_arm.motors
         self.follower_arms['left'] = self.config.left_leader_arm.motors
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
+        
+        self.connect_excluded_cameras = ["image_pika_pose"]
 
         pika_recv_thread = threading.Thread(target=pika_recv_server, daemon=True)
         pika_recv_thread.start()
 
         vive_recv_thread = threading.Thread(target=vive_recv_server, daemon=True)
         vive_recv_thread.start()
+
+        self.pika_transferorm = Transformer()
         
         self.is_connected = False
         self.logs = {}
         self.frame_counter = 0  # 帧计数器
 
-        
+
 
     def get_motor_names(self, arm: dict[str, dict]) -> list:
         return [f"{arm}_{motor}" for arm, motors in arm.items() for motor in motors]
@@ -252,7 +255,7 @@ class PikaV1Manipulator:
         # 定义所有需要等待的条件及其错误信息
         conditions = [
             (
-                lambda: all(name in recv_images for name in self.cameras),
+                lambda: all(name in recv_images for name in self.cameras if name not in self.connect_excluded_cameras),
                 lambda: [name for name in self.cameras if name not in recv_images],
                 "等待摄像头图像超时"
             ),
@@ -419,7 +422,7 @@ class PikaV1Manipulator:
                     byte_array[:3] = pose_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    follower_pos[name] = torch.from_numpy(byte_array)
+                    follower_pos[name] = byte_array
 
                     self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
 
@@ -435,10 +438,33 @@ class PikaV1Manipulator:
                     byte_array[:4] = rotation_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    follower_rotation[name] = torch.from_numpy(byte_array)
+                    follower_rotation[name] = byte_array
 
                     self.logs[f"read_follower_{name}_rotation_dt_s"] = time.perf_counter() - now
+        
+        # 从VIVE坐标系变换到PIKA夹爪坐标系（相对第一帧，两夹爪中值）
+        for name in self.follower_arms:
+            # print(f"Calling trans with - name: {name}, position: {follower_pos[name]}, rotation: {follower_rotation[name]}")
 
+            result = self.pika_transferorm.trans(position=follower_pos[name], rotation=follower_rotation[name], name=name)
+            if result is None:
+                follower_pos[name] = np.zeros(3, dtype=np.float32)
+                follower_rotation[name] = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)  # 单位四元数
+            else:
+                try:
+                    new_pos, new_rot, *optional = result
+                    if optional and optional[0] is not None and "left" in name:
+                        recv_images["image_pika_pose"] = optional[0]
+                    follower_pos[name] = np.asarray(new_pos, dtype=np.float32).copy()
+                    follower_rotation[name] = np.asarray(new_rot, dtype=np.float32).copy()
+                except (TypeError, ValueError) as e:
+                    follower_pos[name] = np.zeros(3, dtype=np.float32)
+                    follower_rotation[name] = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+
+            follower_pos[name] = torch.from_numpy(follower_pos[name])
+            follower_rotation[name] = torch.from_numpy(follower_rotation[name])
+
+        
         # follower_gripper = {}
         # for name in self.follower_arms:
         #     for match_name in recv_gripper:
@@ -495,6 +521,8 @@ class PikaV1Manipulator:
         action_dict["action"] = action
         for name in self.cameras:
             obs_dict[f"observation.images.{name}"] = images[name]
+
+        # obs_dict["observation.images.image_pika_pose"] = torch.from_numpy(recv_images["image_pika_pose"])
         
         # print("end teleoperate record")
 
@@ -664,6 +692,8 @@ class PikaV1Manipulator:
         global vive_running_server
         pika_running_server = False
         vive_running_server = False
+
+        self.pika_transferorm.close()
         
 
     def __del__(self):

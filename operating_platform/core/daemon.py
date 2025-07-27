@@ -78,9 +78,11 @@ class Daemon:
             self.robot = make_robot_from_config(config)
         except Exception as e:
             KeyboardInterrupt
+        print("Make robot succese")
 
         if not self.robot.is_connected:
             self.robot.connect()
+        print("Connect robot succese")
 
         # self.thread.start()
         # self.running = True
