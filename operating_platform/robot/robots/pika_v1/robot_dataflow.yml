@@ -39,15 +39,15 @@ nodes:
       image_left_fisheye: camera-left-fisheye/image
       image_right_tac_l: camera-right-tac-l/image
 
-  - id: rerun
-    path: dora-rerun
-    inputs:
-      image_right_fisheye:
-        source: camera-right-fisheye/image
-        queue_size: 1
-      image_left_fisheye:
-        source: camera-left-fisheye/image
-        queue_size: 1
-      image_right_tac_l:
-        source: camera-right-tac-l/image
-        queue_size: 1
+  # - id: rerun
+  #   path: dora-rerun
+  #   inputs:
+  #     image_right_fisheye:
+  #       source: camera-right-fisheye/image
+  #       queue_size: 1
+  #     image_left_fisheye:
+  #       source: camera-left-fisheye/image
+  #       queue_size: 1
+  #     image_right_tac_l:
+  #       source: camera-right-tac-l/image
+  #       queue_size: 1

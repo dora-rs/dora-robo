@@ -418,8 +418,8 @@ class PikaV1RobotConfig(RobotConfig):
             "image_pika_pose": OpenCVCameraConfig(
                 camera_index=4,
                 fps=30,
-                width=640,
-                height=480,
+                width=1280,
+                height=960,
             ),
         }
     )
