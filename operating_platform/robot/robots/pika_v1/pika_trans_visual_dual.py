@@ -45,7 +45,7 @@ class TransformVisualizer:
             matplotlib.use('Agg')
         
         # 创建图形（无头模式下不会显示窗口）
-        self.fig = plt.figure(figsize=(12, 10))
+        self.fig = plt.figure(figsize=(6, 5))
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.view_init(azim=-160)
         self.axis_length = axis_length
