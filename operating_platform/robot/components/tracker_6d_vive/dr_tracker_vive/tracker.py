@@ -18,8 +18,14 @@ import pyarrow as pa
 import pysurvive
 from dora import Node
 
-from tracker_6d_vive.pa_schema import pa_imu_schema as imu_schema
-from tracker_6d_vive.pa_schema import pa_pose_schema as pose_schema
+
+from pathlib import Path
+print("Current working directory:", Path.cwd())
+print("Python path:", sys.path)
+
+
+from dr_tracker_vive.pa_schema import pa_imu_schema as imu_schema
+from dr_tracker_vive.pa_schema import pa_pose_schema as pose_schema
 
 # Initialize logging
 logger = logging.getLogger(__name__)
