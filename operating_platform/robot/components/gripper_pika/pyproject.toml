@@ -1,5 +1,5 @@
 [project]
-name = "dr-gripper-pika"
+name = "dr-component-gripper-pika"
 version = "0.1.0"
 description = ""
 authors = [
@@ -9,8 +9,12 @@ readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
     "dora-rs-cli (>=0.3.11,<0.4.0)",
-    "pysurvive"
+    "pysurvive",
+    "agx-pypika"
 ]
+
+[tool.setuptools]
+packages = ["dr_gripper_pika"]
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]

@@ -1,5 +1,5 @@
 [project]
-name = "dr-tracker-vive"
+name = "dr-component-tracker-vive"
 version = "0.1.0"
 authors = [
   { name = "Xuecheng Liu", email = "liuxuechengCFA@163.com" },
