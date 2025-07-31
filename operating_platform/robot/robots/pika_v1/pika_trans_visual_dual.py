@@ -35,7 +35,7 @@ def quat_slerp(q0, q1, t):
     return (np.sin(theta - theta / t) * q0 + sin_theta * q1) / sin_full
 
 class TransformVisualizer:
-    def __init__(self, axis_length=0.1, space_size=2):
+    def __init__(self, axis_length=0.4, space_size=2):
         # 检查环境变量决定运行模式
         self.return_image = RETURN_IMAGE
         
@@ -45,7 +45,7 @@ class TransformVisualizer:
             matplotlib.use('Agg')
         
         # 创建图形（无头模式下不会显示窗口）
-        self.fig = plt.figure(figsize=(6, 5))
+        self.fig = plt.figure(figsize=(8, 6))
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.ax.view_init(azim=-160)
         self.axis_length = axis_length
@@ -138,7 +138,7 @@ class TransformVisualizer:
                 color = self.device_colors.get(device_id, 'red')
                 label = f"{device_id.capitalize()} Pose"
                 self.plot_transform(transform, label=label, color=color)
-                self.plot_trajectory(device_id, color=color)
+                # self.plot_trajectory(device_id, color=color)
         
         # 仅在交互模式下刷新
         if not self.return_image:

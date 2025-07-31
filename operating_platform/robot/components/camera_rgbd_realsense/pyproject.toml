@@ -1,5 +1,5 @@
 [project]
-name = "dr-camera-opencv"
+name = "dr-camera-realsense"
 version = "0.1.0"
 description = ""
 authors = [
@@ -9,7 +9,8 @@ readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
     "dora-rs-cli (>=0.3.11,<0.4.0)",
-    "opencv-python (>= 4.1.1)"
+    "opencv-python (>= 4.1.1)",
+    "pyrealsense2"
 ]
 
 [build-system]

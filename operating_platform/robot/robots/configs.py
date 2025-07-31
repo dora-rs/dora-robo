@@ -377,7 +377,7 @@ class PikaV1RobotConfig(RobotConfig):
             "rotation_quat_y":  [5, "pika-pose"],
             "rotation_quat_z":  [6, "pika-pose"],
             "rotation_quat_w":  [7, "pika-pose"],
-            # "gripper":          [8, "pika-gripper"],
+            "gripper":          [8, "pika-gripper"],
         },
     )
 
@@ -391,32 +391,44 @@ class PikaV1RobotConfig(RobotConfig):
             "rotation_quat_y":  [5, "pika-pose"],
             "rotation_quat_z":  [6, "pika-pose"],
             "rotation_quat_w":  [7, "pika-pose"],
-            # "gripper":          [8, "pika-gripper"],
+            "gripper":          [8, "pika-gripper"],
         },
     )
 
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {
-            "image_right_fisheye": OpenCVCameraConfig(
+            "image_right": OpenCVCameraConfig(
                 camera_index=1,
                 fps=30,
                 width=640,
                 height=480,
             ),
-            "image_left_fisheye": OpenCVCameraConfig(
-                camera_index=2,
-                fps=30,
-                width=640,
-                height=480,
-            ),
-            "image_right_tac_l": OpenCVCameraConfig(
+            # "image_left": OpenCVCameraConfig(
+            #     camera_index=2,
+            #     fps=30,
+            #     width=640,
+            #     height=480,
+            # ),
+            "image_right_fisheye": OpenCVCameraConfig(
                 camera_index=3,
                 fps=30,
                 width=640,
                 height=480,
             ),
-            "image_pika_pose": OpenCVCameraConfig(
+            "image_left_fisheye": OpenCVCameraConfig(
                 camera_index=4,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+            "image_right_tac_l": OpenCVCameraConfig(
+                camera_index=5,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+            "image_pika_pose": OpenCVCameraConfig(
+                camera_index=6,
                 fps=30,
                 width=1280,
                 height=960,

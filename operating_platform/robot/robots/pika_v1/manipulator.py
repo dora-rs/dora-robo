@@ -31,6 +31,7 @@ from operating_platform.robot.robots.pika_v1.pika_trans_visual_dual import Trans
 # IPC Address
 pika_ipc_address = "ipc:///tmp/dr-robot-pika-v1"
 vive_ipc_address = "ipc:///tmp/dr-component-vive"
+gripper_ipc_address = "ipc:///tmp/dr-component-pika-gripper"
 
 
 recv_images = {}
@@ -144,6 +145,40 @@ def vive_recv_server():
             break
 
 
+gripper_socket = zmq_context.socket(zmq.PAIR)
+gripper_socket.bind(gripper_ipc_address)
+gripper_socket.setsockopt(zmq.RCVTIMEO, 300)
+gripper_running_server = True
+
+def gripper_recv_server():
+    """接收数据线程"""
+    while gripper_running_server:
+        try:
+
+            message_parts = gripper_socket.recv_multipart()
+            if len(message_parts) < 2:
+                continue  # 协议错误
+
+            event_id = message_parts[0].decode('utf-8')
+            buffer_bytes = message_parts[1]
+            metadata = json.loads(message_parts[2].decode('utf-8'))
+            
+            if 'gripper' in event_id:
+                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+                if gripper_array is not None:
+                    with lock:
+                        recv_gripper[event_id] = gripper_array
+
+        except zmq.Again:
+            print(f"Pika Gripper Received Timeout")
+            continue
+        except Exception as e:
+            print("recv error:", e)
+            break
+
+
+
+
 class OpenCVCamera:
     def __init__(self, config: OpenCVCameraConfig):
         self.config = config
@@ -207,6 +242,9 @@ class PikaV1Manipulator:
 
         vive_recv_thread = threading.Thread(target=vive_recv_server, daemon=True)
         vive_recv_thread.start()
+
+        gripper_recv_thread = threading.Thread(target=gripper_recv_server, daemon=True)
+        gripper_recv_thread.start()
 
         self.pika_transferorm = Transformer()
         
@@ -275,14 +313,14 @@ class PikaV1Manipulator:
                 lambda: [name for name in self.follower_arms if not any(name in key for key in recv_pose)],
                 "等待机械臂末端位姿超时"
             ),
-            # (
-            #     lambda: any(
-            #         any(name in key for key in recv_gripper)
-            #         for name in self.follower_arms
-            #     ),
-            #     lambda: [name for name in self.follower_arms if not any(name in key for key in recv_gripper)],
-            #     "等待机械臂夹爪超时"
-            # )
+            (
+                lambda: any(
+                    any(name in key for key in recv_gripper)
+                    for name in self.follower_arms
+                ),
+                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_gripper)],
+                "等待机械臂夹爪超时"
+            )
         ]
 
         # 跟踪每个条件是否已完成
@@ -465,20 +503,21 @@ class PikaV1Manipulator:
             follower_rotation[name] = torch.from_numpy(follower_rotation[name])
 
         
-        # follower_gripper = {}
-        # for name in self.follower_arms:
-        #     for match_name in recv_gripper:
-        #             now = time.perf_counter()
+        follower_gripper = {}
+        for name in self.follower_arms:
+            for match_name in recv_gripper:
+                if name in match_name:
+                    now = time.perf_counter()
 
-        #             byte_array = np.zeros(1, dtype=np.float32)
-        #             gripper_read = recv_gripper[match_name]
+                    byte_array = np.zeros(1, dtype=np.float32)
+                    gripper_read = recv_gripper[match_name]
 
-        #             byte_array[:1] = gripper_read[:]
-        #             byte_array = np.round(byte_array, 3)
+                    byte_array[:1] = gripper_read[:]
+                    byte_array = np.round(byte_array, 3)
                     
-        #             follower_gripper[name] = torch.from_numpy(byte_array)
+                    follower_gripper[name] = torch.from_numpy(byte_array)
 
-        #             self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
+                    self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
 
         #记录当前关节角度
         state = []
@@ -487,8 +526,8 @@ class PikaV1Manipulator:
                 state.append(follower_pos[name])
             if name in follower_rotation:
                 state.append(follower_rotation[name])
-            # if name in follower_gripper:
-            #     state.append(follower_gripper[name])
+            if name in follower_gripper:
+                state.append(follower_gripper[name])
         state = torch.cat(state)
 
         #将关节目标位置添加到 action 列表中
@@ -498,8 +537,8 @@ class PikaV1Manipulator:
                 action.append(follower_pos[name])
             if name in follower_rotation:
                 action.append(follower_rotation[name])
-            # if name in follower_gripper:
-            #     action.append(follower_gripper[name])
+            if name in follower_gripper:
+                action.append(follower_gripper[name])
         action = torch.cat(action)
 
         # Capture images from cameras
@@ -690,8 +729,10 @@ class PikaV1Manipulator:
         self.is_connected = False
         global pika_running_server
         global vive_running_server
+        global gripper_running_server
         pika_running_server = False
         vive_running_server = False
+        gripper_running_server = False
 
         self.pika_transferorm.close()
         
