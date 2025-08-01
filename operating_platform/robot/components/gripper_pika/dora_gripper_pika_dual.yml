@@ -6,7 +6,7 @@ nodes:
     outputs:
       - distance
     env:
-      USB_PORT: "/dev/ttyUSB81"
+      USB_PORT: "/dev/ttyUSB0"
 
   # - id: gripper-left
   #   path: dr_gripper_pika/main.py
