@@ -17,3 +17,5 @@ nodes:
     path: dr_tracker_vive/visual.py
     inputs:
       pose: dora-vive-tracker/pose
+    env:
+      DR_VIVE_DISPLAY: True

@@ -27,4 +27,4 @@ nodes:
     path: dr_gripper_pika/node_link.py
     inputs:
       gripper_right: gripper-right/distance
-      # gripper_left: gripper-left/distance
+      gripper_left: gripper-right/distance
