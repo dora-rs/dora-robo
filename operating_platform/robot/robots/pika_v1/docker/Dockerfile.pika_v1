@@ -26,7 +26,8 @@ RUN apt-get install -y \
         libssl-dev \
         libglu1-mesa-dev \
         libglfw3-dev \
-        libgl1-mesa-dev
+        libgl1-mesa-dev \
+        v4l-utils
 
 # 设置安装参数
 ENV CONDA_DIR=/opt/conda

@@ -17,11 +17,11 @@ nodes:
   #   env:
   #     USB_PORT: "/dev/ttyUSB82"
 
-  - id: plot
-    path: dr_gripper_pika/plot.py
-    inputs:
-      gripper_right: gripper-right/distance
-      # gripper_left: gripper-left/distance
+  # - id: plot
+  #   path: dr_gripper_pika/plot.py
+  #   inputs:
+  #     gripper_right: gripper-right/distance
+  #     # gripper_left: gripper-left/distance
 
   - id: node-link
     path: dr_gripper_pika/node_link.py

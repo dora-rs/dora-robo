@@ -7,7 +7,6 @@ nodes:
       - image
       - depth
     env:
-      CAPTURE_PATH: 0
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
       DEVICE_SERIAL: 230322275124
@@ -32,7 +31,7 @@ nodes:
     outputs:
       - image
     env:
-      CAPTURE_PATH: 6
+      CAPTURE_PATH: 8
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
 
@@ -43,7 +42,7 @@ nodes:
     outputs:
       - image
     env:
-      CAPTURE_PATH: 6
+      CAPTURE_PATH: 8
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
 
@@ -54,7 +53,7 @@ nodes:
     outputs:
       - image
     env:
-      CAPTURE_PATH: 6
+      CAPTURE_PATH: 0
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
 
