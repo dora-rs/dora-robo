@@ -9,7 +9,8 @@ nodes:
     env:
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
-      DEVICE_SERIAL: 230322275124
+      DEVICE_SERIAL: 230322276898
+      # DEVICE_SERIAL: 230322276898 这个才是右边的，开启gripper检测后这个用不了
 
   # - id: camera-left
   #   path: ../../components/camera_rgbd_realsense/main.py
@@ -22,7 +23,7 @@ nodes:
   #     CAPTURE_PATH: 0
   #     IMAGE_WIDTH: 640
   #     IMAGE_HEIGHT: 480
-  #     DEVICE_SERIAL: 230322275124
+  #     DEVICE_SERIAL: 230322275855
 
   - id: camera-right-fisheye
     path: ../../components/camera_opencv/main.py
@@ -42,7 +43,7 @@ nodes:
     outputs:
       - image
     env:
-      CAPTURE_PATH: 8
+      CAPTURE_PATH: 16
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
 
@@ -68,6 +69,7 @@ nodes:
   # - id: rerun
   #   path: dora-rerun
   #   inputs:
+  #     image_right: camera-right/image
   #     image_right_fisheye:
   #       source: camera-right-fisheye/image
   #       queue_size: 1
