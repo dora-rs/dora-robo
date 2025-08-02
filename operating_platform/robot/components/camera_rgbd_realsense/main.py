@@ -36,7 +36,7 @@ def main():
     config = rs.config()
     config.enable_device(device_serial)
     config.enable_stream(rs.stream.color, image_width, image_height, rs.format.rgb8, 30)
-    config.enable_stream(rs.stream.depth, image_width, image_height, rs.format.z16, 30)
+    # config.enable_stream(rs.stream.depth, image_width, image_height, rs.format.z16, 30)
 
     align_to = rs.stream.color
     align = rs.align(align_to)
@@ -44,8 +44,8 @@ def main():
     profile = pipeline.start(config)
 
     rgb_profile = profile.get_stream(rs.stream.color)
-    depth_profile = profile.get_stream(rs.stream.depth)
-    _depth_intr = depth_profile.as_video_stream_profile().get_intrinsics()
+    # depth_profile = profile.get_stream(rs.stream.depth)
+    # _depth_intr = depth_profile.as_video_stream_profile().get_intrinsics()
     rgb_intr = rgb_profile.as_video_stream_profile().get_intrinsics()
     node = Node()
     start_time = time.time()
@@ -66,13 +66,17 @@ def main():
                 frames = pipeline.wait_for_frames()
                 aligned_frames = align.process(frames)
 
-                aligned_depth_frame = aligned_frames.get_depth_frame()
+                # aligned_depth_frame = aligned_frames.get_depth_frame()
+                # color_frame = aligned_frames.get_color_frame()
+                # if not aligned_depth_frame or not color_frame:
+                #     continue
+                
                 color_frame = aligned_frames.get_color_frame()
-                if not aligned_depth_frame or not color_frame:
+                if not color_frame:
                     continue
 
-                depth_image = np.asanyarray(aligned_depth_frame.get_data())
-                scaled_depth_image = depth_image
+                # depth_image = np.asanyarray(aligned_depth_frame.get_data())
+                # scaled_depth_image = depth_image
                 frame = np.asanyarray(color_frame.get_data())
 
                 ## Change rgb to bgr
@@ -105,16 +109,19 @@ def main():
                 # metadata["principal_point"] = [int(rgb_intr.ppx), int(rgb_intr.ppy)]
                 metadata["timestamp"] = time.time_ns()
                 node.send_output("image", storage, metadata)
-                metadata["encoding"] = "mono16"
-                scaled_depth_image[scaled_depth_image > 5000] = 0
-                node.send_output(
-                    "depth",
-                    pa.array(scaled_depth_image.ravel()),
-                    metadata,
-                )
+                # metadata["encoding"] = "mono16"
+                # scaled_depth_image[scaled_depth_image > 5000] = 0
+                # node.send_output(
+                #     "depth",
+                #     pa.array(scaled_depth_image.ravel()),
+                #     metadata,
+                # )
 
         elif event_type == "ERROR":
             raise RuntimeError(event["error"])
+        
+        if event_type == "STOP":
+            break
 
 
 if __name__ == "__main__":
