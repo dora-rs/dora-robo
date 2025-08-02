@@ -124,6 +124,9 @@ cleanup() {
     fi
 }
 
+# 捕获中断信号
+trap cleanup INT TERM EXIT
+
 # 检查容器是否存在
 check_container() {
     if ! docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
