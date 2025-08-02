@@ -123,7 +123,7 @@ def vive_recv_server():
             if 'pose' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if pose_array is not None:
-                    print(f"Received pose data for event_id: {event_id}")
+                    # print(f"Received pose data for event_id: {event_id}")
                     # print(f"Pose array shape: {pose_array.shape}")
                     # print(f"Pose array values: {pose_array}")
                     with lock:

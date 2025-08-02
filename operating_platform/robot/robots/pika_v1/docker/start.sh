@@ -152,7 +152,7 @@ execute_in_container() {
     local log_file="$2"
     
     log "执行命令: $cmd"
-    docker exec -t -e DISPLAY=:0 "$CONTAINER_NAME" bash -c "$cmd" \
+    docker exec -t "$CONTAINER_NAME" bash -c "$cmd" \
         > >(tee -a "$log_file") 2>&1 &
     echo $! >> .pids
 }
