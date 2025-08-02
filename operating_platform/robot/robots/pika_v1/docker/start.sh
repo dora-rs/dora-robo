@@ -12,20 +12,23 @@ DATAFLOW_PATH_ROBOT_PIKA="operating_platform/robot/robots/pika_v1/robot_dataflow
 TIMEOUT=30  # 等待超时时间（秒）
 CLEANED_UP=false
 IN_CONTAINER_MODE=false  # 容器模式标志
+OVERWRITE_LOGS=false     # 是否覆盖日志标志
 
 # 显示帮助信息
 show_help() {
     echo "用法: $0 [选项]"
     echo
     echo "选项:"
-    echo "  -c, --container  在容器内直接运行（容器模式）"
-    echo "  -h, --host       在宿主机运行（控制容器） - 默认模式"
-    echo "  -?, --help       显示此帮助信息"
+    echo "  -c, --container      在容器内直接运行（容器模式）"
+    echo "  -h, --host           在宿主机运行（控制容器） - 默认模式"
+    echo "  -o, --overwrite-logs 覆盖过去的日志文件（清空旧日志）"
+    echo "  -?, --help           显示此帮助信息"
     echo
     echo "示例:"
-    echo "  $0                     # 宿主机模式（默认）"
-    echo "  $0 --container         # 容器模式"
-    echo "  $0 -c                  # 容器模式（简写）"
+    echo "  $0                     # 宿主机模式（默认），追加日志"
+    echo "  $0 --container         # 容器模式，追加日志"
+    echo "  $0 -o                  # 覆盖日志模式"
+    echo "  $0 -c -o               # 容器模式 + 覆盖日志"
     exit 0
 }
 
@@ -38,6 +41,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--host)
             IN_CONTAINER_MODE=false
+            shift
+            ;;
+        -o|--overwrite-logs)
+            OVERWRITE_LOGS=true
             shift
             ;;
         -\?|--help)
@@ -177,6 +184,20 @@ else
     log "运行模式: 容器模式（直接在容器内运行）"
     # 容器模式下确保日志目录存在
     mkdir -p logs
+fi
+
+# 确保日志目录存在（两种模式都需要）
+mkdir -p logs
+
+# 处理日志覆盖选项
+if [ "$OVERWRITE_LOGS" = true ]; then
+    log "覆盖日志模式：清空旧日志文件"
+    > logs/coordinator.log
+    > logs/dataflow_vive.log
+    > logs/dataflow_gripper.log
+    > logs/dataflow_pika.log
+else
+    log "追加日志模式：将新日志追加到现有文件"
 fi
 
 # 准备conda激活命令

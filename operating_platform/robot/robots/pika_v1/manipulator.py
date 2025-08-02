@@ -376,6 +376,29 @@ class PikaV1Manipulator:
             # 减少 CPU 占用
             time.sleep(0.01)
 
+        # ===== 新增成功打印逻辑 =====
+        success_messages = []
+        # 摄像头连接状态
+        if conditions[0][0]():
+            cam_received = [name for name in self.cameras 
+                        if name in recv_images and name not in self.connect_excluded_cameras]
+            success_messages.append(f"摄像头: {', '.join(cam_received)}")
+        
+        # 机械臂数据状态
+        arm_data_types = ["旋转角度", "末端位姿", "夹爪状态"]
+        for i, data_type in enumerate(arm_data_types, 1):
+            if conditions[i][0]():
+                arm_received = [name for name in self.follower_arms 
+                            if any(name in key for key in (recv_rotation, recv_pose, recv_gripper)[i-1])]
+                success_messages.append(f"{data_type}: {', '.join(arm_received)}")
+        
+        # 打印成功连接信息
+        print("\n[连接成功] 所有设备已就绪:")
+        for msg in success_messages:
+            print(f"  - {msg}")
+        print(f"  总耗时: {time.perf_counter() - start_time:.2f}秒\n")
+        # ===========================
+        
         self.is_connected = True
     
     @property

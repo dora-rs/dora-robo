@@ -12,7 +12,7 @@ context = zmq.Context()
 socket = context.socket(zmq.PAIR)
 socket.connect(ipc_address)
 socket.setsockopt(zmq.SNDHWM, 2000)
-socket.setsockopt(zmq.SNDBUF, 2**25)
+socket.setsockopt(zmq.SNDBUF, 100 * 1024 * 1024)
 running_server = True
 
 
