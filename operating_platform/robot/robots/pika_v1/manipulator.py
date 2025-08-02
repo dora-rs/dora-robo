@@ -123,7 +123,7 @@ def vive_recv_server():
             if 'pose' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if pose_array is not None:
-                    # print(f"Received pose data for event_id: {event_id}")
+                    print(f"Received pose data for event_id: {event_id}")
                     # print(f"Pose array shape: {pose_array.shape}")
                     # print(f"Pose array values: {pose_array}")
                     with lock:
@@ -298,7 +298,7 @@ class PikaV1Manipulator:
                 "等待摄像头图像超时"
             ),
             (
-                lambda: any(
+                lambda: all(
                     any(name in key for key in recv_rotation)
                     for name in self.follower_arms
                 ),
@@ -306,7 +306,7 @@ class PikaV1Manipulator:
                 "等待旋转角度数据超时"
             ),
             (
-                lambda: any(
+                lambda: all(
                     any(name in key for key in recv_pose)
                     for name in self.follower_arms
                 ),
@@ -314,7 +314,7 @@ class PikaV1Manipulator:
                 "等待机械臂末端位姿超时"
             ),
             (
-                lambda: any(
+                lambda: all(
                     any(name in key for key in recv_gripper)
                     for name in self.follower_arms
                 ),
