@@ -397,6 +397,12 @@ class PikaV1RobotConfig(RobotConfig):
 
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {
+            "image_top": OpenCVCameraConfig(
+                camera_index=0,
+                fps=30,
+                width=640,
+                height=480,
+            ),
             "image_right": OpenCVCameraConfig(
                 camera_index=1,
                 fps=30,
@@ -409,18 +415,18 @@ class PikaV1RobotConfig(RobotConfig):
                 width=640,
                 height=480,
             ),
-            "image_right_fisheye": OpenCVCameraConfig(
-                camera_index=3,
-                fps=30,
-                width=640,
-                height=480,
-            ),
-            "image_left_fisheye": OpenCVCameraConfig(
-                camera_index=4,
-                fps=30,
-                width=640,
-                height=480,
-            ),
+            # "image_right_fisheye": OpenCVCameraConfig(
+            #     camera_index=3,
+            #     fps=30,
+            #     width=640,
+            #     height=480,
+            # ),
+            # "image_left_fisheye": OpenCVCameraConfig(
+            #     camera_index=4,
+            #     fps=30,
+            #     width=640,
+            #     height=480,
+            # ),
             "image_right_tac_r": OpenCVCameraConfig(
                 camera_index=5,
                 fps=30,
