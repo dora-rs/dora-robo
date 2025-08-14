@@ -36,6 +36,8 @@ dependencies = [
     "numba>=0.61.2,<0.62.0",
     "flask-socketio>=5.5.1,<6.0.0",
     "matplotlib>=3.10.3",
+    "sounddevice",
+    "soundfile",
 ]
 
 [tool.setuptools]
