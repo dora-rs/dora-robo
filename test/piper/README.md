@@ -9,7 +9,7 @@ cd test/piper
 
 create conda env
 ```
-conda create -n dr-piper-rerun python=3.10 -y
+conda create -n dr-piper-rerun python=3.11 -y
 conda activate dr-piper-rerun
 ```
 
