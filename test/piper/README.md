@@ -10,6 +10,7 @@ cd test/piper
 create conda env
 ```
 conda create -n dr-piper-rerun python=3.10
+conda activate dr-piper-rerun
 ```
 
 install dependencies
