@@ -20,12 +20,12 @@ pip install piper_sdk
 ```
 
 ```
-pip uninstall rerun-sdk -y
-pip install rerun-sdk==0.23.4
+dora build arms_only.yml
 ```
 
 ```
-dora build arms_only.yml
+pip uninstall rerun-sdk -y
+pip install rerun-sdk==0.23.4
 ```
 
 ## Use
