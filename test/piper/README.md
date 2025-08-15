@@ -9,7 +9,7 @@ cd test/piper
 
 create conda env
 ```
-conda create -n dr-piper-rerun python=3.10
+conda create -n dr-piper-rerun python=3.10 -y
 conda activate dr-piper-rerun
 ```
 
@@ -20,7 +20,7 @@ pip install piper_sdk
 ```
 
 ```
-pip uninsatall rerun-sdk
+pip uninstall rerun-sdk -y
 pip install rerun-sdk==0.23.4
 ```
 
