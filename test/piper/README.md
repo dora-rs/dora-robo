@@ -9,7 +9,8 @@ cd test/piper
 
 create conda env
 ```
-conda create -n dr-piper-rerun python=3.10
+conda create -n dr-piper-rerun python=3.11 -y
+conda activate dr-piper-rerun
 ```
 
 install dependencies
@@ -19,12 +20,12 @@ pip install piper_sdk
 ```
 
 ```
-pip uninsatall rerun-sdk
-pip install rerun-sdk==0.23.4
+dora build arms_only.yml
 ```
 
 ```
-dora build arms_only.yml
+pip uninstall rerun-sdk -y
+pip install rerun-sdk==0.23.4
 ```
 
 ## Use
