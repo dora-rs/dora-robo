@@ -42,7 +42,14 @@ def get_features_from_robot(robot: Robot, use_videos: bool = True) -> dict:
             key: {"dtype": "video" if use_videos else "image", **ft}
             for key, ft in robot.camera_features.items()
         }
-    return {**robot.motor_features, **camera_ft, **DEFAULT_FEATURES}
+    
+    microphone_ft = {}
+    if robot.microphones:
+        microphone_ft = {
+            key: {"dtype": "audio", **ft}
+            for key, ft in robot.microphone_features.items()
+        }
+    return {**robot.motor_features, **camera_ft, **microphone_ft, **DEFAULT_FEATURES}
 
 def get_safe_version(repo_id: str, version: str | packaging.version.Version) -> str:
     """

@@ -234,6 +234,7 @@ class PikaV1Manipulator:
         self.follower_arms['left'] = self.config.left_leader_arm.motors
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
+        self.microphones = self.config.microphones
         
         self.connect_excluded_cameras = ["image_pika_pose"]
 
@@ -268,6 +269,18 @@ class PikaV1Manipulator:
                 "info": None,
             }
         return cam_ft
+    
+    @property
+    def microphone_features(self) -> dict:
+        mic_ft = {}
+        for mic_key, mic in self.microphones.items():
+            key = f"observation.audio.{mic_key}"
+            mic_ft[key] = {
+                "shape": (1),
+                "names": ["channels"],
+                "info": None,
+            }
+        return mic_ft
     
     @property
     def motor_features(self) -> dict:

@@ -117,6 +117,10 @@ class Record:
                     num_processes=record_cfg.num_image_writer_processes,
                     num_threads=record_cfg.num_image_writer_threads_per_camera * len(robot.cameras),
                 )
+            if len(robot.microphones) > 0:
+                self.dataset.start_audio_writer(
+                    microphones=robot.microphones,
+                )
             sanity_check_dataset_robot_compatibility(self.dataset, robot, record_cfg.fps, record_cfg.video)
         else:
             # Create empty dataset or load existing saved episodes
@@ -127,6 +131,7 @@ class Record:
                 root=record_cfg.root,
                 robot=robot,
                 use_videos=record_cfg.video,
+                use_audios=len(robot.microphones) > 0,
                 image_writer_processes=record_cfg.num_image_writer_processes,
                 image_writer_threads=record_cfg.num_image_writer_threads_per_camera * len(robot.cameras),
             )
@@ -159,6 +164,7 @@ class Record:
         if self.running == True:
             self.running = False
             self.thread.join()
+            self.dataset.stop_audio_writer()
 
         # stop_recording(robot, listener, record_cfg.display_cameras)
         # log_say("Stop recording", record_cfg.play_sounds, blocking=True)

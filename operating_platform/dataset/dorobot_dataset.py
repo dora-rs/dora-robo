@@ -19,6 +19,7 @@ from huggingface_hub.errors import RevisionNotFoundError
 
 from operating_platform.dataset.compute_stats import aggregate_stats, compute_episode_stats
 from operating_platform.dataset.image_writer import AsyncImageWriter, write_image
+from operating_platform.dataset.audio_writer import AsyncAudioWriter
 from operating_platform.dataset.functions import (
     check_version_compatibility,
     get_features_from_robot,
@@ -29,6 +30,7 @@ from operating_platform.utils.constants import DOROBOT_DATASET
 from operating_platform.utils.dataset import (
     DEFAULT_FEATURES,
     DEFAULT_IMAGE_PATH,
+    DEFAULT_AUDIO_PATH,
     INFO_PATH,
     TASKS_PATH,
     append_jsonlines,
@@ -135,6 +137,11 @@ class DoRobotDatasetMetadata:
         ep_chunk = self.get_episode_chunk(ep_index)
         fpath = self.video_path.format(episode_chunk=ep_chunk, video_key=vid_key, episode_index=ep_index)
         return Path(fpath)
+    
+    def get_audio_file_path(self, ep_index: int, aud_key: str) -> Path:
+        ep_chunk = self.get_episode_chunk(ep_index)
+        fpath = self.audio_path.format(episode_chunk=ep_chunk, audio_key=aud_key, episode_index=ep_index)
+        return Path(fpath)
 
     def get_episode_chunk(self, ep_index: int) -> int:
         return ep_index // self.chunks_size
@@ -148,6 +155,11 @@ class DoRobotDatasetMetadata:
     def video_path(self) -> str | None:
         """Formattable string for the video files."""
         return self.info["video_path"]
+    
+    @property
+    def audio_path(self) -> str | None:
+        """Formattable string for the audio files."""
+        return self.info["audio_path"]
 
     @property
     def robot_type(self) -> str | None:
@@ -178,6 +190,11 @@ class DoRobotDatasetMetadata:
     def camera_keys(self) -> list[str]:
         """Keys to access visual modalities (regardless of their storage method)."""
         return [key for key, ft in self.features.items() if ft["dtype"] in ["video", "image"]]
+    
+    @property
+    def mic_keys(self) -> list[str]:
+        """Keys to access visual modalities stored as audio."""
+        return [key for key, ft in self.features.items() if ft["dtype"] in ["audio"]]
 
     @property
     def names(self) -> dict[str, list | dict]:
@@ -333,6 +350,7 @@ class DoRobotDatasetMetadata:
         robot_type: str | None = None,
         features: dict | None = None,
         use_videos: bool = True,
+        use_audios: bool = False,
     ) -> "DoRobotDatasetMetadata":
         """Creates metadata for a DoRobotDataset."""
         obj = cls.__new__(cls)
@@ -367,7 +385,7 @@ class DoRobotDatasetMetadata:
 
         obj.tasks, obj.task_to_task_index = {}, {}
         obj.episodes_stats, obj.stats, obj.episodes = {}, {}, {}
-        obj.info = create_empty_dataset_info(DOROBOT_DATASET_VERSION, DOROBOT_DATASET_VERSION, fps, robot_type, features, use_videos)
+        obj.info = create_empty_dataset_info(DOROBOT_DATASET_VERSION, DOROBOT_DATASET_VERSION, fps, robot_type, features, use_videos, use_audios)
         if len(obj.video_keys) > 0 and not use_videos:
             raise ValueError()
         write_json(obj.info, obj.root / INFO_PATH)
@@ -501,8 +519,8 @@ class DoRobotDataset(torch.utils.data.Dataset):
         self.video_backend = video_backend if video_backend else "pyav"
         self.delta_indices = None
 
-        # Unused attributes
         self.image_writer = None
+        self.audio_writer = None
         self.episode_buffer = None
 
         self.root.mkdir(exist_ok=True, parents=True)
@@ -802,6 +820,12 @@ class DoRobotDataset(torch.utils.data.Dataset):
             image_key=image_key, episode_index=episode_index, frame_index=frame_index
         )
         return self.root / fpath
+    
+    def _get_audio_file_path(self, episode_index: int, audio_key: str) -> Path:
+        fpath = DEFAULT_AUDIO_PATH.format(
+            audio_key=audio_key, episode_index=episode_index, chunk_index=self.meta.get_episode_chunk(episode_index)
+        )
+        return self.root / fpath
 
     def _save_image(self, image: torch.Tensor | np.ndarray | PIL.Image.Image, fpath: Path) -> None:
         if self.image_writer is None:
@@ -897,6 +921,9 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 continue
             episode_buffer[key] = np.stack(episode_buffer[key])
 
+        self.stop_audio_writer()
+        self.wait_audio_writer()
+
         self._wait_image_writer()
         self._save_episode_table(episode_buffer, episode_index)
         ep_stats = compute_episode_stats(episode_buffer, self.features)
@@ -960,6 +987,22 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 else:
                     print(f"[SKIP] 视频文件不存在，跳过删除: {video_path}")
 
+        # 处理视频文件
+        if len(self.meta.mic_keys) > 0:
+            print(f"[INFO] 正在处理音频文件 (keys: {self.meta.mic_keys})")
+            for key in self.meta.mic_keys:
+                audio_path = self.root / self.meta.get_audio_file_path(ep_idx, key)
+                if os.path.isfile(audio_path):
+                    print(f"[DEBUG] 删除音频文件: {audio_path}")
+                    os.remove(audio_path)
+                    # 验证删除结果
+                    if not os.path.exists(audio_path):
+                        print(f"[SUCCESS] 成功删除视频文件: {audio_path}")
+                    else:
+                        print(f"[ERROR] 删除失败！文件仍存在: {audio_path}")
+                else:
+                    print(f"[SKIP] 视频文件不存在，跳过删除: {audio_path}")
+
         # 处理数据文件
         data_path = self.root / self.meta.get_data_file_path(ep_idx)
         if os.path.isfile(data_path):
@@ -990,6 +1033,9 @@ class DoRobotDataset(torch.utils.data.Dataset):
     def clear_episode_buffer(self) -> None:
         episode_index = self.episode_buffer["episode_index"]
 
+        self.stop_audio_writer()
+        self.wait_audio_writer()
+
         if episode_index == 0 and self.meta.total_episodes == 0:
             print(f"[WARNING] dorobot_dataset.py clear_episode_buffer(): 检测到 ep_idx=0，即将删除整个目录树: {self.root}")
             shutil.rmtree(self.root)
@@ -998,9 +1044,17 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 for cam_key in self.meta.camera_keys:
                     img_dir = self._get_image_file_path(
                         episode_index=episode_index, image_key=cam_key, frame_index=0
-                    ).parent.parent
+                    ).parent
                     if img_dir.is_dir():
                         shutil.rmtree(img_dir)
+            if self.audio_writer is not None:
+                for mic_key in self.meta.mic_keys:
+                    audio_path = self._get_audio_file_path(
+                        episode_index=episode_index, audio_key=mic_key
+                    )
+                    # 检查音频文件是否存在且是文件（而非目录）
+                    if audio_path.is_file():
+                        audio_path.unlink()  # 直接删除文件本身
 
             # Reset the buffer
             self.episode_buffer = self.create_episode_buffer()
@@ -1058,6 +1112,46 @@ class DoRobotDataset(torch.utils.data.Dataset):
             encode_video_frames(img_dir, video_path, self.fps, overwrite=True)
 
         return video_paths
+    
+    # def _get_audio_file_path(self, episode_index: int, audio_key: str, episode_index: int) -> Path:
+    #     fpath = DEFAULT_AUDIO_PATH.format(
+    #         image_key=image_key, episode_index=episode_index, episode_index=episode_index
+    #     )
+    #     return self.root / fpath
+    
+    def start_audio_writer(self, microphones: dict[str, int]) -> None:
+        if isinstance(self.audio_writer, AsyncAudioWriter):
+            logging.warning(
+                "You are starting a new AsyncAudioWriter that is replacing an already existing one in the dataset."
+            )
+
+        episode_index = self.meta.total_episodes
+        # 1. 创建路径字典：为每个麦克风生成独立的音频文件路径
+        audio_paths = {
+            key: self.root / self.meta.get_audio_file_path(episode_index, key)
+            for key in microphones
+        }
+
+        # 2. 将路径字典传递给 AsyncAudioWriter
+        self.audio_writer = AsyncAudioWriter(
+            microphones=microphones,
+            savepath=audio_paths,  # 传入字典而非单个路径
+        )
+
+    def stop_audio_writer(self) -> None:
+        """
+        Whenever wrapping this dataset inside a parallelized DataLoader, this needs to be called first to
+        remove the image_writer in order for the LeRobotDataset object to be pickleable and parallelized.
+        """
+        if self.audio_writer is not None:
+            self.audio_writer.stop()
+            
+
+    def wait_audio_writer(self) -> None:
+        """Wait for asynchronous image writer to finish."""
+        if self.audio_writer is not None:
+            self.audio_writer.wait_until_done()
+            # self.audio_writer = None
 
     @classmethod
     def create(
@@ -1069,6 +1163,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
         robot_type: str | None = None,
         features: dict | None = None,
         use_videos: bool = True,
+        use_audios: bool = False,
         tolerance_s: float = 1e-4,
         image_writer_processes: int = 0,
         image_writer_threads: int = 0,
@@ -1084,6 +1179,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
             robot_type=robot_type,
             features=features,
             use_videos=use_videos,
+            use_audios=use_audios,
         )
         obj.repo_id = obj.meta.repo_id
         obj.root = obj.meta.root
@@ -1093,6 +1189,8 @@ class DoRobotDataset(torch.utils.data.Dataset):
 
         if image_writer_processes or image_writer_threads:
             obj.start_image_writer(image_writer_processes, image_writer_threads)
+        if len(robot.microphones) > 0:
+            obj.create_audio_writer(robot.microphones)
 
         # TODO(aliberts, rcadene, alexander-soare): Merge this with OnlineBuffer/DataBuffer
         obj.episode_buffer = obj.create_episode_buffer()
