@@ -462,8 +462,8 @@ class PikaV1RobotConfig(RobotConfig):
 
     microphones: dict[str, int] = field(
         default_factory=lambda: {
-            "audio_right": 7,
-            "audio_left": 8,
+            "audio_right": 3,
+            "audio_left": 11,
         }
     )
 

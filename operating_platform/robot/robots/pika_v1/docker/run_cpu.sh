@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IMAGE_NAME=dr-image-pika-v1
-IMAGE_VERSION=V0.3
+IMAGE_VERSION=V0.4
 CONTAINER_NAME=dr-container-pika-v1
 DOROBOT_HOME=/root/DoRobot
 
