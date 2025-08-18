@@ -197,7 +197,7 @@ cython_debug/
 **/Log/
 **/log/
 data/
-dataset/
+/dataset
 docker/*.tar*
 **/cache/
 
