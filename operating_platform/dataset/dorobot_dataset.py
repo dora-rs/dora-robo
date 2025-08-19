@@ -917,7 +917,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
         for key, ft in self.features.items():
             # index, episode_index, task_index are already processed above, and image and video
             # are processed separately by storing image path and frame info as meta data
-            if key in ["index", "episode_index", "task_index"] or ft["dtype"] in ["image", "video"]:
+            if key in ["index", "episode_index", "task_index"] or ft["dtype"] in ["image", "video", "audio"]:
                 continue
             episode_buffer[key] = np.stack(episode_buffer[key])
 
@@ -1138,6 +1138,8 @@ class DoRobotDataset(torch.utils.data.Dataset):
             savepath=audio_paths,  # 传入字典而非单个路径
         )
 
+        self.audio_writer.start()  # 启动音频写入器
+
     def stop_audio_writer(self) -> None:
         """
         Whenever wrapping this dataset inside a parallelized DataLoader, this needs to be called first to
@@ -1186,6 +1188,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
         obj.revision = None
         obj.tolerance_s = tolerance_s
         obj.image_writer = None
+        obj.audio_writer = None
 
         if image_writer_processes or image_writer_threads:
             obj.start_image_writer(image_writer_processes, image_writer_threads)

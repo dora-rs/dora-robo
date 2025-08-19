@@ -303,6 +303,8 @@ def get_hf_features_from_features(features: dict) -> datasets.Features:
     for key, ft in features.items():
         if ft["dtype"] == "video":
             continue
+        elif ft["dtype"] == "audio":
+            continue
         elif ft["dtype"] == "image":
             hf_features[key] = datasets.Image()
         elif ft["shape"] == (1,):
@@ -642,7 +644,13 @@ class IterableNamespace(SimpleNamespace):
 
 def validate_frame(frame: dict, features: dict):
     optional_features = {"timestamp"}
-    expected_features = (set(features) - set(DEFAULT_FEATURES.keys())) | {"task"}
+
+    excluded_features = {
+        key for key in features
+        if key.startswith("observation.audio")
+    }
+
+    expected_features = (set(features) - set(DEFAULT_FEATURES.keys()) - set(excluded_features))| {"task"}
     actual_features = set(frame.keys())
 
     error_message = validate_features_presence(actual_features, expected_features, optional_features)

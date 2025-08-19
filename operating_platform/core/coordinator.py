@@ -404,11 +404,11 @@ def main(cfg: ControlPipelineConfig):
                     name = key[len("observation.images."):]
                     coordinator.update_stream(name, img)
 
-                    if not is_headless():
-                        # print(f"will show image, name:{name}")
-                        cv2.imshow(name, img)
-                        cv2.waitKey(1)
-                        # print("show image succese")
+                    # if not is_headless():
+                    #     # print(f"will show image, name:{name}")
+                    #     cv2.imshow(name, img)
+                    #     cv2.waitKey(1)
+                    #     # print("show image succese")
                     
             else:
                 print("observation is none")

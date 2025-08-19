@@ -3,6 +3,7 @@ import soundfile as sf
 import queue
 import threading
 import sys
+import time  # 添加 time 模块
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -32,7 +33,7 @@ class AsyncAudioWriter:
                  savepath: Dict[str, Path],  # 修改为Path对象字典
                  samplerate: Optional[int] = None,
                  channels: int = 1,
-                 subtype: Optional[str] = "PCM_24"):
+                 subtype: Optional[str] = "PCM_16"):
         """
         初始化音频录制器
         
@@ -61,11 +62,15 @@ class AsyncAudioWriter:
         self._tasks: List[Dict] = []  # 存储每个任务的资源
         self._is_started = False
         self._stop_event = threading.Event()
+        self._stop_timeout = 5.0  # 停止超时时间(秒)
 
     def start(self):
         """启动所有录音设备"""
         if self._is_started:
             raise RuntimeError("录音已启动，请先调用stop()")
+        
+        # 确保状态完全重置
+        self._stop_event.clear()
         
         try:
             for name, device_id in self.microphones.items():
@@ -77,7 +82,9 @@ class AsyncAudioWriter:
                 
                 # 检查文件是否已存在
                 if file_path.exists():
-                    raise FileExistsError(f"文件 {file_path} 已存在，请选择其他路径或删除现有文件。")
+                    # 改为删除现有文件而不是抛出异常
+                    print(f"警告: 文件 {file_path} 已存在，将被覆盖")
+                    file_path.unlink()
                 
                 print(f"开始录制 {name} 到 {file_path} (设备ID: {device_id})")
                 
@@ -169,9 +176,11 @@ class AsyncAudioWriter:
         finally:
             # 确保文件关闭
             try:
-                file.close()
-            except:
-                pass
+                if not file.closed:
+                    file.close()
+                    print(f"已关闭音频文件: {filename}")
+            except Exception as e:
+                print(f"关闭文件 {filename} 失败: {str(e)}", file=sys.stderr)
 
     def stop(self):
         """停止所有录音设备（非阻塞）"""
@@ -184,7 +193,9 @@ class AsyncAudioWriter:
         # 停止音频流
         for task in self._tasks:
             try:
-                task['stream'].stop()
+                if task['stream'].active:  # 检查流是否活跃
+                    task['stream'].stop()
+                    print(f"已停止设备 {task['device_id']} 的音频流")
             except Exception as e:
                 print(f"停止设备 {task['device_id']} 失败: {str(e)}", file=sys.stderr)
         
@@ -200,18 +211,18 @@ class AsyncAudioWriter:
             return
         
         print("等待写入完成...")
-        end_time = None
-        if timeout is not None:
-            end_time = threading._time.time() + timeout
+        actual_timeout = timeout if timeout is not None else self._stop_timeout
+        start_time = time.time()
         
         for task in self._tasks:
             # 计算剩余等待时间
-            remaining = None
-            if end_time is not None:
-                remaining = end_time - threading._time.time()
-                if remaining <= 0:
-                    break
+            elapsed = time.time() - start_time
+            remaining = max(0, actual_timeout - elapsed)
             
+            if remaining <= 0:
+                print(f"警告: 等待超时，强制终止任务: {task['filename']}", file=sys.stderr)
+                break
+                
             # 等待线程结束
             task['thread'].join(timeout=remaining)
             if task['thread'].is_alive():
@@ -233,11 +244,29 @@ class AsyncAudioWriter:
             
             # 关闭文件流
             try:
-                if not task['file'].closed:
+                if 'file' in task and not task['file'].closed:
                     task['file'].close()
             except:
                 pass
+            
+            # 关键修复: 显式关闭PortAudio流
+            try:
+                if 'stream' in task and task['stream']:
+                    if task['stream'].active:
+                        task['stream'].stop()
+                    task['stream'].close()  # 释放底层资源
+                    print(f"已关闭设备 {task['device_id']} 的音频流")
+            except Exception as e:
+                print(f"关闭音频流失败: {str(e)}", file=sys.stderr)
         
+        # 重置状态变量
         self._tasks = []
-        self._stop_event.clear()
+        # 不要清除_stop_event，因为start方法会重置它
         self._is_started = False
+
+    def __del__(self):
+        """析构函数 - 确保资源被释放"""
+        if self._is_started:
+            print("警告: AsyncAudioWriter被销毁时仍在运行! 调用stop()和wait_until_done()确保安全停止", file=sys.stderr)
+            self.stop()
+            self.wait_until_done()
