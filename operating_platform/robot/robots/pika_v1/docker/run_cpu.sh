@@ -1,8 +1,9 @@
 #!/bin/bash
 
 IMAGE_NAME=dr-image-pika-v1
-IMAGE_VERSION=V0.4
+IMAGE_VERSION=V0.5
 CONTAINER_NAME=dr-container-pika-v1
+DOROBOT_HOME_HOST=”/home/${USER}/DoRobot“
 DOROBOT_HOME=/root/DoRobot
 
 # 允许容器访问 X server
@@ -20,6 +21,7 @@ docker run -it \
   --privileged \
   --network host \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $DOROBOT_HOME_HOST:$DOROBOT_HOME \
   -e DISPLAY=$DISPLAY \
   -e XDG_RUNTIME_DIR=/tmp \
   -e http_proxy=http://127.0.0.1:7897 \
