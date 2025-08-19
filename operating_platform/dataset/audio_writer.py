@@ -44,10 +44,12 @@ class AsyncAudioWriter:
             channels: 声道数 (默认1)
             subtype: 音频格式 (如 "PCM_24", None表示使用soundfile默认)
         """
-        # 验证microphones和savepath的键是否完全匹配
-        if set(microphones.keys()) != set(savepath.keys()):
+        # 验证savepath是否包含microphones的所有键
+        if not set(microphones.keys()).issubset(set(savepath.keys())):
+            missing_keys = set(microphones.keys()) - set(savepath.keys())
             raise ValueError(
-                f"microphones和savepath的键必须完全一致\n"
+                f"savepath必须包含microphones的所有键\n"
+                f"microphones中缺失的键: {list(missing_keys)}\n"
                 f"microphones keys: {list(microphones.keys())}\n"
                 f"savepath keys: {list(savepath.keys())}"
             )
