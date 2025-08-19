@@ -113,7 +113,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     return json.dumps(result)
 
 class Coordinator:
-    def __init__(self, daemon: Daemon, server_url="http://localhost:8080"):
+    def __init__(self, daemon: Daemon, server_url="http://localhost:8088"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
