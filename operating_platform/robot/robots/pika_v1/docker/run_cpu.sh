@@ -3,7 +3,7 @@
 IMAGE_NAME=dr-image-pika-v1
 IMAGE_VERSION=V0.5
 CONTAINER_NAME=dr-container-pika-v1
-DOROBOT_HOME_HOST=”/home/${USER}/DoRobot“
+DOROBOT_HOME_HOST="/home/${USER}/DoRobot"
 DOROBOT_HOME=/root/DoRobot
 
 # 允许容器访问 X server
