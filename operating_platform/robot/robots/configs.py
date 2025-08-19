@@ -170,6 +170,13 @@ class AlohaRobotConfig(RobotConfig):
         }
     )
 
+    microphones: dict[str, int] = field(
+        default_factory=lambda: {
+            # "audio_right": 2,
+            # "audio_left": 4,
+        }
+    )
+
 
 @RobotConfig.register_subclass("adora")
 @dataclass
@@ -433,18 +440,18 @@ class PikaV1RobotConfig(RobotConfig):
                 width=640,
                 height=480,
             ),
-            "image_right_tac_l": OpenCVCameraConfig(
-                camera_index=6,
-                fps=30,
-                width=640,
-                height=480,
-            ),
-            "image_left_tac_r": OpenCVCameraConfig(
-                camera_index=7,
-                fps=30,
-                width=640,
-                height=480,
-            ),
+            # "image_right_tac_l": OpenCVCameraConfig(
+            #     camera_index=6,
+            #     fps=30,
+            #     width=640,
+            #     height=480,
+            # ),
+            # "image_left_tac_r": OpenCVCameraConfig(
+            #     camera_index=7,
+            #     fps=30,
+            #     width=640,
+            #     height=480,
+            # ),
             "image_left_tac_l": OpenCVCameraConfig(
                 camera_index=8,
                 fps=30,
@@ -454,8 +461,8 @@ class PikaV1RobotConfig(RobotConfig):
             "image_pika_pose": OpenCVCameraConfig(
                 camera_index=9,
                 fps=30,
-                width=1280,
-                height=960,
+                width=640,
+                height=480,
             ),
         }
     )
