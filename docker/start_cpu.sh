@@ -14,7 +14,7 @@ docker run -it \
   --name operating_platform \
   --privileged \
   --network host \
-  --shm-size=2g \
+  --shm-size=8g \
   -v "$(pwd)":/Operating-Platform \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -e DISPLAY=$DISPLAY \
