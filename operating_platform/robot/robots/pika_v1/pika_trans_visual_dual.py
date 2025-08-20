@@ -190,7 +190,7 @@ class TransformVisualizer:
             # 转换为 RGB (丢弃 Alpha 通道)
             img_data = img_data[:, :, 1:]
 
-            img_data = cv2.resize(img_data, (1280, 960), interpolation=cv2.INTER_AREA)
+            img_data = cv2.resize(img_data, (640, 480), interpolation=cv2.INTER_AREA)
             
             # 无头模式：不显示窗口，直接返回图像
             return position, rotation, img_data

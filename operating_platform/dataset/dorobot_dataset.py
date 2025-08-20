@@ -823,7 +823,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
     
     def _get_audio_file_path(self, episode_index: int, audio_key: str) -> Path:
         fpath = DEFAULT_AUDIO_PATH.format(
-            audio_key=audio_key, episode_index=episode_index, chunk_index=self.meta.get_episode_chunk(episode_index)
+            audio_key=audio_key, episode_index=episode_index, episode_chunk=self.meta.get_episode_chunk(episode_index)
         )
         return self.root / fpath
 
@@ -987,7 +987,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 else:
                     print(f"[SKIP] 视频文件不存在，跳过删除: {video_path}")
 
-        # 处理视频文件
+        # 处理音频文件
         if len(self.meta.mic_keys) > 0:
             print(f"[INFO] 正在处理音频文件 (keys: {self.meta.mic_keys})")
             for key in self.meta.mic_keys:
@@ -997,7 +997,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
                     os.remove(audio_path)
                     # 验证删除结果
                     if not os.path.exists(audio_path):
-                        print(f"[SUCCESS] 成功删除视频文件: {audio_path}")
+                        print(f"[SUCCESS] 成功删除音频文件: {audio_path}")
                     else:
                         print(f"[ERROR] 删除失败！文件仍存在: {audio_path}")
                 else:
@@ -1129,7 +1129,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
         # 1. 创建路径字典：为每个麦克风生成独立的音频文件路径
         audio_paths = {
             key: self.root / self.meta.get_audio_file_path(episode_index, key)
-            for key in microphones
+            for key in self.meta.mic_keys
         }
 
         # 2. 将路径字典传递给 AsyncAudioWriter

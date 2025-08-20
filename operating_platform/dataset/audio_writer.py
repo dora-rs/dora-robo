@@ -44,13 +44,17 @@ class AsyncAudioWriter:
             channels: 声道数 (默认1)
             subtype: 音频格式 (如 "PCM_24", None表示使用soundfile默认)
         """
-        # 验证microphones和savepath的键是否完全匹配
-        if set(microphones.keys()) != set(savepath.keys()):
-            raise ValueError(
-                f"microphones和savepath的键必须完全一致\n"
-                f"microphones keys: {list(microphones.keys())}\n"
-                f"savepath keys: {list(savepath.keys())}"
-            )
+        # 验证每个microphones键都能在savepath中找到对应的键（通过后缀匹配）
+        for mic_key in microphones.keys():
+            # 查找包含mic_key的savepath键
+            matching_keys = [k for k in savepath.keys() if k.endswith(mic_key)]
+            
+            if not matching_keys:
+                raise ValueError(
+                    f"savepath中找不到与microphones键 '{mic_key}' 对应的键\n"
+                    f"microphones keys: {list(microphones.keys())}\n"
+                    f"savepath keys: {list(savepath.keys())}"
+                )
         
         self.microphones = microphones
         self.savepath = savepath  # 现在是一个字典 {设备名: Path对象}
@@ -74,8 +78,14 @@ class AsyncAudioWriter:
         
         try:
             for name, device_id in self.microphones.items():
-                # 直接使用Path对象
-                file_path = self.savepath[name]
+                matching_keys = [k for k in self.savepath.keys() if k.endswith(name)]
+
+                if not matching_keys:
+                    raise KeyError(f"在savepath中找不到与'{name}'匹配的键")
+
+                # 选择最长的匹配（最具体的路径）
+                best_match = max(matching_keys, key=len)
+                file_path = self.savepath[best_match]
                 
                 # 确保父目录存在
                 file_path.parent.mkdir(exist_ok=True, parents=True)
