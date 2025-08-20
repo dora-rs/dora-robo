@@ -6,3 +6,13 @@ python operating_platform/dataset/visual/visualize_dataset_html.py \
 
 python operating_platform/dataset/visual/visualize_dataset_html.py \
   --repo-id '20250728/dev/倒水'
+
+
+python operating_platform/dataset/visual/visualize_dataset_html.py \
+  --repo-id 20250820/dev/''$'\345\200\222\346\260\264''_Pour the waterCopy0725testCopy_226'
+
+
+python operating_platform/dataset/visual/visual_dataset.py \
+    --repo-id 20250820/dev/''$'\345\200\222\346\260\264''_Pour the waterCopy0725testCopy_226' \
+    --episode-index 0 \
+    --mode distant

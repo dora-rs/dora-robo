@@ -39,7 +39,7 @@ socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
 running_server = True
 recv_images = {}  # 缓存每个 event_id 的最新帧
 recv_master_jointstats = {}
-recv_master_pose = {}
+# recv_master_pose = {}
 recv_master_gripper = {}
 recv_follower_jointstats = {}
 recv_follower_pose = {}
@@ -73,18 +73,21 @@ def recv_server():
                 joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if joint_array is not None:
                     with lock:
+                        # print(f"Received event_id = {event_id}")
                         recv_master_jointstats[event_id] = joint_array
 
-            if 'endpose' in event_id and 'master' in event_id:
-                pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if pose_array is not None:
-                    with lock:
-                        recv_master_pose[event_id] = pose_array
+            # if 'endpose' in event_id and 'master' in event_id:
+            #     pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+            #     if pose_array is not None:
+            #         with lock:
+            #             # print(f"Received event_id = {event_id}")
+            #             recv_master_pose[event_id] = pose_array
 
             if 'gripper' in event_id and 'master' in event_id:
                 gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if gripper_array is not None:
                     with lock:
+                        # print(f"Received event_id = {event_id}")
                         recv_master_gripper[event_id] = gripper_array
 
             if 'jointstat' in event_id and 'follower' in event_id:
@@ -174,6 +177,7 @@ class AlohaManipulator:
         self.follower_arms['left'] = self.config.left_leader_arm.motors
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
+        self.microphones = self.config.microphones
 
         recv_thread = threading.Thread(target=recv_server, daemon=True)
         recv_thread.start()
@@ -360,21 +364,21 @@ class AlohaManipulator:
 
                     self.logs[f"read_master_{name}_joint_dt_s"] = time.perf_counter() - now
 
-        master_pos = {}
-        for name in self.follower_arms:
-            for match_name in recv_master_pose:
-                if name in match_name:
-                    now = time.perf_counter()
+        # master_pos = {}
+        # for name in self.follower_arms:
+        #     for match_name in recv_master_pose:
+        #         if name in match_name:
+        #             now = time.perf_counter()
 
-                    byte_array = np.zeros(6, dtype=np.float32)
-                    pose_read = recv_master_pose[match_name]
+        #             byte_array = np.zeros(6, dtype=np.float32)
+        #             pose_read = recv_master_pose[match_name]
 
-                    byte_array[:6] = pose_read[:]
-                    byte_array = np.round(byte_array, 3)
+        #             byte_array[:6] = pose_read[:]
+        #             byte_array = np.round(byte_array, 3)
                     
-                    master_joint[name] = torch.from_numpy(byte_array)
+        #             master_pos[name] = torch.from_numpy(byte_array)
 
-                    self.logs[f"read_master_{name}_pos_dt_s"] = time.perf_counter() - now
+        #             self.logs[f"read_master_{name}_pos_dt_s"] = time.perf_counter() - now
 
         master_gripper = {}
         for name in self.follower_arms:
@@ -388,11 +392,11 @@ class AlohaManipulator:
                     byte_array[:1] = gripper_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    master_joint[name] = torch.from_numpy(byte_array)
+                    master_gripper[name] = torch.from_numpy(byte_array)
 
                     self.logs[f"read_master_{name}_gripper_dt_s"] = time.perf_counter() - now
         
-        return master_joint, master_pos, master_gripper
+        return master_joint, master_gripper
 
     def teleop_step(
         self, record_data=False, 
@@ -409,7 +413,8 @@ class AlohaManipulator:
 
         follower_joint, follower_pos, follower_gripper = self.follower_record()
 
-        master_joint, master_pos, master_gripper = self.master_record()
+        # master_joint, master_pos, master_gripper = self.master_record()
+        master_joint, master_gripper = self.master_record()
 
         #记录当前关节角度
         state = []
@@ -428,7 +433,7 @@ class AlohaManipulator:
             if name in master_joint:
                 action.append(master_joint[name])
             if name in master_pos:
-                action.append(master_pos[name])
+                action.append(follower_pos[name])
             if name in master_gripper:
                 action.append(master_gripper[name])
         action = torch.cat(action)

@@ -126,7 +126,7 @@ def main():
                 gripper = piper.GetArmGripperMsgs()
                 joint_value += [gripper.gripper_state.grippers_angle / 1000 / 100]
 
-                node.send_output("slave-jointstate", pa.array(joint_value, type=pa.float32()))
+                node.send_output("slave_jointstate", pa.array(joint_value, type=pa.float32()))
 
                 position = piper.GetArmEndPoseMsgs()
                 position_value = []
@@ -137,9 +137,9 @@ def main():
                 position_value += [position.end_pose.RY_axis * 0.001 / 360 * 2 * np.pi]
                 position_value += [position.end_pose.RZ_axis * 0.001 / 360 * 2 * np.pi]
 
-                node.send_output("slave-endpose", pa.array(position_value, type=pa.float32()))
+                node.send_output("slave_endpose", pa.array(position_value, type=pa.float32()))
                 node.send_output(
-                    "slave-gripper",
+                    "slave_gripper",
                     pa.array(
                         [gripper.gripper_state.grippers_angle / 1000 / 100],
                         type=pa.float32(),
@@ -150,32 +150,32 @@ def main():
                 joint = piper.GetArmJointCtrl()
 
                 joint_value = []
-                joint_value += [joint.joint_state.joint_1.real / factor]
-                joint_value += [joint.joint_state.joint_2.real / factor]
-                joint_value += [joint.joint_state.joint_3.real / factor]
-                joint_value += [joint.joint_state.joint_4.real / factor]
-                joint_value += [joint.joint_state.joint_5.real / factor]
-                joint_value += [joint.joint_state.joint_6.real / factor]
+                joint_value += [joint.joint_ctrl.joint_1.real / factor]
+                joint_value += [joint.joint_ctrl.joint_2.real / factor]
+                joint_value += [joint.joint_ctrl.joint_3.real / factor]
+                joint_value += [joint.joint_ctrl.joint_4.real / factor]
+                joint_value += [joint.joint_ctrl.joint_5.real / factor]
+                joint_value += [joint.joint_ctrl.joint_6.real / factor]
 
                 gripper = piper.GetArmGripperCtrl()
-                joint_value += [gripper.gripper_state.grippers_angle / 1000 / 100]
+                joint_value += [gripper.gripper_ctrl.grippers_angle / 1000 / 100]
 
-                node.send_output("master-jointstate", pa.array(joint_value, type=pa.float32()))
+                node.send_output("master_jointstate", pa.array(joint_value, type=pa.float32()))
 
-                position = piper.GetFK(mode="control")
-                position_value = []
-                position_value += [position.end_pose.X_axis * 0.001]
-                position_value += [position.end_pose.Y_axis * 0.001]
-                position_value += [position.end_pose.Z_axis * 0.001]
-                position_value += [position.end_pose.RX_axis / 360 * 2 * np.pi]
-                position_value += [position.end_pose.RY_axis / 360 * 2 * np.pi]
-                position_value += [position.end_pose.RZ_axis / 360 * 2 * np.pi]
+                # position = piper.GetFK(mode="control")
+                # position_value = []
+                # position_value += [position[5][0] * 0.001]
+                # position_value += [position[5][1] * 0.001]
+                # position_value += [position[5][2] * 0.001]
+                # position_value += [position[5][3] / 360 * 2 * np.pi]
+                # position_value += [position[5][4] / 360 * 2 * np.pi]
+                # position_value += [position[5][5] / 360 * 2 * np.pi]
 
-                node.send_output("master-endpose", pa.array(position_value, type=pa.float32()))
+                # node.send_output("master_endpose", pa.array(position_value, type=pa.float32()))
                 node.send_output(
-                    "master-gripper",
+                    "master_gripper",
                     pa.array(
-                        [gripper.gripper_state.grippers_angle / 1000 / 100],
+                        [gripper.gripper_ctrl.grippers_angle / 1000 / 100],
                         type=pa.float32(),
                     ),
                 )
