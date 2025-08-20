@@ -47,6 +47,7 @@ nodes:
       piper_right_urdf: urdf/piper_right.urdf
       piper_left_transform: 0 0.3 0
       piper_right_transform: 0 -0.3 0
+      RERUN_MEMORY_LIMIT: 25%
 
   - id: print_joint
     path: print_joint.py
