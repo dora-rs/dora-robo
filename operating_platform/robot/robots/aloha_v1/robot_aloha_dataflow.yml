@@ -37,9 +37,12 @@ nodes:
     inputs:
       tick: dora/timer/millis/33
     outputs:
-      - jointstate
-      - pose
-      - gripper
+      - master-endpose
+      - master-jointstate
+      - master-gripper
+      - slave-endpose
+      - slave-jointstate
+      - slave-gripper
     env:
       CAN_BUS: can_right
       TEACH_MODE: True
@@ -49,9 +52,12 @@ nodes:
     inputs:
       tick: dora/timer/millis/33
     outputs:
-      - jointstate
-      - pose
-      - gripper
+      - master-endpose
+      - master-jointstate
+      - master-gripper
+      - slave-endpose
+      - slave-jointstate
+      - slave-gripper
     env:
       CAN_BUS: can_left
       TEACH_MODE: True
@@ -65,12 +71,18 @@ nodes:
       # image_depth_right: camera_right/image_depth
       image_left: camera_left/image
       # image_depth_left: camera_left/image_depth
-      jointstate_right: piper_right/jointstate
-      jointstate_left: piper_left/jointstate
-      pose_right: piper_right/pose
-      pose_left: piper_left/pose
-      gripper_right: piper_right/gripper
-      gripper_left: piper_left/gripper
+      master_jointstate_right: piper_right/master-jointstate
+      master_jointstate_left: piper_left/master-jointstate
+      master_pose_right: piper_right/master-endpose
+      master_pose_left: piper_left/master-endpose
+      master_gripper_right: piper_right/master-gripper
+      master_gripper_left: piper_left/master-gripper
+      follower_jointstate_right: piper_right/slave-jointstate
+      follower_jointstate_left: piper_left/slave-jointstate
+      follower_pose_right: piper_right/slave-endpose
+      follower_pose_left: piper_left/slave-endpose
+      follower_gripper_right: piper_right/slave-gripper
+      follower_gripper_left: piper_left/slave-gripper
 
   # - id: rerun
   #   path: dora-rerun

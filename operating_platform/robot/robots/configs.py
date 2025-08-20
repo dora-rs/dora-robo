@@ -87,10 +87,6 @@ class ManipulatorRobotConfig(RobotConfig):
 @RobotConfig.register_subclass("aloha")
 @dataclass
 class AlohaRobotConfig(RobotConfig):
-    start_pose = [-90.0, 90.0, 90.0, -90.0, 0.0, 0.0, 0.0]
-    joint_p_limit = [169.0, 102.0, 169.0, 52.0, 169.0, 117.0, 169.0]
-    joint_n_limit = [-169.0, -102.0, -169.0, -167.0, -169.0, -87.0, -169.0]
-
     right_leader_arm = PiperMotorsBusConfig(
         port="can_right",
         motors={
@@ -176,6 +172,8 @@ class AlohaRobotConfig(RobotConfig):
             # "audio_left": 4,
         }
     )
+
+    use_videos: bool = False
 
 
 @RobotConfig.register_subclass("adora")

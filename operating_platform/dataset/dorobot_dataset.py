@@ -953,9 +953,14 @@ class DoRobotDataset(torch.utils.data.Dataset):
         assert len(parquet_files) == self.num_episodes
 
         # delete images
-        img_dir = self.root / "images"
-        if img_dir.is_dir():
-            shutil.rmtree(self.root / "images")
+        if len(self.meta.video_keys) > 0:
+            for key in self.meta.video_keys:
+                img_dir = self._get_image_file_path(
+                    episode_index=episode_index, image_key=key, frame_index=0
+                ).parent
+                if img_dir.is_dir():
+                    shutil.rmtree(img_dir)
+
 
         if not episode_data:  # Reset the buffer
             self.episode_buffer = self.create_episode_buffer()
@@ -986,6 +991,22 @@ class DoRobotDataset(torch.utils.data.Dataset):
                         print(f"[ERROR] 删除失败！文件仍存在: {video_path}")
                 else:
                     print(f"[SKIP] 视频文件不存在，跳过删除: {video_path}")
+
+        # 处理图片文件
+        if len(self.meta.image_keys) > 0:
+            print(f"[INFO] 正在处理图片文件 (keys: {self.meta.image_keys})")
+            for key in self.meta.image_keys:
+                image_dir = self.root / self._get_image_file_path(ep_idx, key, frame_index=0).parent
+                if os.path.isdir(image_dir):
+                    print(f"[DEBUG] 删除图片文件夹: {image_dir}")
+                    os.remove(image_dir)
+                    # 验证删除结果
+                    if not os.path.exists(image_dir):
+                        print(f"[SUCCESS] 成功删除图片文件夹: {image_dir}")
+                    else:
+                        print(f"[ERROR] 删除失败！图片文件夹仍存在: {image_dir}")
+                else:
+                    print(f"[SKIP] 图片文件夹不存在，跳过删除: {image_dir}")
 
         # 处理音频文件
         if len(self.meta.mic_keys) > 0:
