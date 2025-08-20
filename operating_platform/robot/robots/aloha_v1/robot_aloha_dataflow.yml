@@ -33,7 +33,7 @@ nodes:
       DEVICE_SN: CC1T35300F7
 
   - id: piper_right
-    path: dora-piper
+    path: ../../components/arm_normal_piper_v2/main.py
     inputs:
       tick: dora/timer/millis/33
     outputs:
@@ -45,7 +45,7 @@ nodes:
       TEACH_MODE: True
 
   - id: piper_left
-    path: dora-piper
+    path: ../../components/arm_normal_piper_v2/main.py
     inputs:
       tick: dora/timer/millis/33
     outputs:
