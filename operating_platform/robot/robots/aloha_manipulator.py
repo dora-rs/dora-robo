@@ -432,7 +432,7 @@ class AlohaManipulator:
         for name in self.follower_arms:
             if name in master_joint:
                 action.append(master_joint[name])
-            if name in master_pos:
+            if name in follower_pos:
                 action.append(follower_pos[name])
             if name in master_gripper:
                 action.append(master_gripper[name])
