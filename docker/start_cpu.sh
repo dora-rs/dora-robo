@@ -14,6 +14,7 @@ docker run -it \
   --name operating_platform \
   --privileged \
   --network host \
+  --shm-size=2g \
   -v "$(pwd)":/Operating-Platform \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -e DISPLAY=$DISPLAY \
@@ -21,7 +22,7 @@ docker run -it \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
   -e DOROBOT_HOME=/root/DoRobot \
-  operating-platform:V1.4_ubuntu20
+  operating-platform:V1.6_ubuntu20
 
 # 3. 检查容器是否运行
 if [ "$(docker inspect -f '{{.State.Running}}' operating_platform 2>/dev/null)" == "true" ]; then
