@@ -165,6 +165,42 @@ def update_dataid_json(path, episode_index, data):
         # 写入一行 JSON 数据（每行一个 JSON 对象）
         f.write(json.dumps(append_data, ensure_ascii=False) + '\n')
 
+def find_epindex_from_dataid_json(path: str, task_data_id: str) -> int:
+    """
+    根据 task_data_id 从 op_dataid.jsonl 文件中查询对应的 episode_index
+    
+    Args:
+        path: 数据根目录路径（包含 meta 子目录）
+        task_data_id: 需要查询的任务数据ID
+    
+    Returns:
+        int: 对应的 episode_index 值
+        
+    Raises:
+        FileNotFoundError: 当 op_dataid.jsonl 文件不存在时
+        ValueError: 当指定 task_data_id 未找到时
+    """
+    opdata_path = os.path.join(path, "meta", "op_dataid.jsonl")
+    
+    if not os.path.exists(opdata_path):
+        raise FileNotFoundError(f"元数据文件不存在: {opdata_path}")
+    
+    # 规范化 task_data_id 类型（确保字符串比较）
+    target_id = str(task_data_id).strip()
+    
+    with open(opdata_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            try:
+                record = json.loads(line.strip())
+                # 严格匹配 dataid 字段（考虑大小写和空格）
+                if str(record.get("dataid", "")).strip() == target_id:
+                    return int(record["episode_index"])
+            except (json.JSONDecodeError, KeyError, ValueError) as e:
+                # 跳过无效行但记录警告（实际项目中可添加日志）
+                continue
+    
+    raise ValueError(f"未找到 task_data_id={task_data_id} 对应的 episode_index")
+
 def delete_dataid_json(path, episode_index, data):
     opdata_path = os.path.join(path, "meta", "op_dataid.jsonl")
     
