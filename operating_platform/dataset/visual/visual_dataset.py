@@ -109,6 +109,7 @@ def visualize_dataset(
     ws_port: int = 9087,
     save: bool = False,
     output_dir: Path | None = None,
+    run_duration: float = 0.0,
 ) -> Path | None:
     if save:
         assert output_dir is not None, (
@@ -183,13 +184,17 @@ def visualize_dataset(
         rr.save(rrd_path)
         return rrd_path
 
-    elif mode == "distant":
-        # stop the process from exiting since it is serving the websocket connection
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("Ctrl-C received. Exiting.")
+    if not save or mode == "distant":  # Viewing mode active
+        if run_duration > 0:
+            logging.info(f"Visualization complete. Auto-exiting in {run_duration} seconds...")
+            time.sleep(run_duration)
+        else:
+            logging.info("Visualization complete. Press Ctrl-C to exit.")
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\nCtrl-C received. Exiting.")
 
 
 def main():
