@@ -8,7 +8,7 @@ nodes:
       - image_depth
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC15C430099
+      DEVICE_SN: CC15C43003C
 
   - id: camera_right
     path: ../../components/camera_rgbd_orbbec_v1/main.py
@@ -19,7 +19,7 @@ nodes:
       - image_depth
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC1T35300G3
+      DEVICE_SN: CC1T35300D5
 
   - id: camera_left
     path: ../../components/camera_rgbd_orbbec_v1/main.py
@@ -30,7 +30,7 @@ nodes:
       - image_depth
     env:
       GET_DEVICE_FROM: SN
-      DEVICE_SN: CC16353009S
+      DEVICE_SN: CC1T35300F7
 
   - id: piper_right
     path: ../../components/arm_normal_piper_v2/main.py
