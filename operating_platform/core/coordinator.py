@@ -35,6 +35,8 @@ from operating_platform.core.record import Record, RecordConfig
 from operating_platform.core.replay import DatasetReplayConfig, ReplayConfig, replay
 
 DEFAULT_FPS = 30
+RERUN_WEB_PORT = 9095
+RERUN_WS_PORT = 9185
 
 @cache
 def is_headless():
@@ -372,7 +374,13 @@ class Coordinator:
             dataset = DoRobotDataset(repo_id, root=target_dir, episodes=[ep_index])
 
             # 发送响应
-            self.send_response('start_replay', "success")
+
+            response_data = {
+                "data": {
+                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                },
+            }
+            self.send_response('start_replay', "success", response_data)
             print(f"开始回放数据集: {repo_id}, 目标目录: {target_dir}, 任务数据ID: {task_data_id}, 回放索引: {ep_index}")
 
             replay_dataset_cfg = DatasetReplayConfig(repo_id, ep_index, target_dir, fps=DEFAULT_FPS)
@@ -390,7 +398,9 @@ class Coordinator:
                     visualize_dataset(
                         dataset,
                         mode="distant",
-                        episode_index=ep_index,
+                        episode_index=0,
+                        web_port=RERUN_WEB_PORT,
+                        ws_port=RERUN_WS_PORT,
                         stop_event=stop_event  # 需要replay函数支持stop_event参数
                     )
                 except Exception as e:

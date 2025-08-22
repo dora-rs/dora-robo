@@ -35,7 +35,7 @@ class DatasetReplayConfig:
 
 @dataclass
 class ReplayConfig:
-    robot: RobotConfig
+    robot: Robot
     dataset: DatasetReplayConfig
     # Use vocal synthesis to read events.
     play_sounds: bool = False
@@ -46,10 +46,11 @@ def replay(cfg: ReplayConfig):
     init_logging()
     logging.info(pformat(asdict(cfg)))
 
-    robot = make_robot_from_config(cfg.robot)
+    # robot = make_robot_from_config(cfg.robot)
     dataset = DoRobotDataset(cfg.dataset.repo_id, root=cfg.dataset.root, episodes=[cfg.dataset.episode])
     actions = dataset.hf_dataset.select_columns("action")
-    robot.connect()
+    # robot.connect()
+    robot = cfg.robot
 
     log_say("Replaying episode", cfg.play_sounds, blocking=True)
     for idx in range(dataset.num_frames):
@@ -65,7 +66,7 @@ def replay(cfg: ReplayConfig):
         dt_s = time.perf_counter() - start_episode_t
         busy_wait(1 / dataset.fps - dt_s)
 
-    robot.disconnect()
+    # robot.disconnect()
 
 
 def main():

@@ -73,6 +73,8 @@ import rerun as rr
 import torch
 import torch.utils.data
 import tqdm
+import threading
+from threading import Event
 
 from operating_platform.dataset.dorobot_dataset import DoRobotDataset
 
@@ -105,11 +107,12 @@ def visualize_dataset(
     batch_size: int = 32,
     num_workers: int = 0,
     mode: str = "local",
-    web_port: int = 9090,
-    ws_port: int = 9087,
+    web_port: int = 9095,
+    ws_port: int = 9185,
     save: bool = False,
     output_dir: Path | None = None,
     run_duration: float = 0.0,
+    stop_event: Event | None = None,
 ) -> Path | None:
     if save:
         assert output_dir is not None, (
@@ -140,61 +143,68 @@ def visualize_dataset(
     # TODO(rcadene): remove `gc.collect` when rerun version 0.16 is out, which includes a fix
     gc.collect()
 
-    if mode == "distant":
-        rr.serve_web(open_browser=True, web_port=web_port, ws_port=ws_port)
+    try:
+        if mode == "distant":
+            rr.serve_web(open_browser=True, web_port=web_port, ws_port=ws_port)
 
-    logging.info("Logging to Rerun")
+        logging.info("Logging to Rerun")
 
-    for batch in tqdm.tqdm(dataloader, total=len(dataloader)):
-        # iterate over the batch
-        for i in range(len(batch["index"])):
-            rr.set_time_sequence("frame_index", batch["frame_index"][i].item())
-            rr.set_time_seconds("timestamp", batch["timestamp"][i].item())
+        for batch in tqdm.tqdm(dataloader, total=len(dataloader)):
+            # iterate over the batch
+            for i in range(len(batch["index"])):
+                rr.set_time_sequence("frame_index", batch["frame_index"][i].item())
+                rr.set_time_seconds("timestamp", batch["timestamp"][i].item())
 
-            # display each camera image
-            for key in dataset.meta.camera_keys:
-                # TODO(rcadene): add `.compress()`? is it lossless?
-                rr.log(key, rr.Image(to_hwc_uint8_numpy(batch[key][i])))
+                # display each camera image
+                for key in dataset.meta.camera_keys:
+                    # TODO(rcadene): add `.compress()`? is it lossless?
+                    rr.log(key, rr.Image(to_hwc_uint8_numpy(batch[key][i])))
 
-            # display each dimension of action space (e.g. actuators command)
-            if "action" in batch:
-                for dim_idx, val in enumerate(batch["action"][i]):
-                    rr.log(f"action/{dim_idx}", rr.Scalar(val.item()))
+                # display each dimension of action space (e.g. actuators command)
+                if "action" in batch:
+                    for dim_idx, val in enumerate(batch["action"][i]):
+                        rr.log(f"action/{dim_idx}", rr.Scalar(val.item()))
 
-            # display each dimension of observed state space (e.g. agent position in joint space)
-            if "observation.state" in batch:
-                for dim_idx, val in enumerate(batch["observation.state"][i]):
-                    rr.log(f"state/{dim_idx}", rr.Scalar(val.item()))
+                # display each dimension of observed state space (e.g. agent position in joint space)
+                if "observation.state" in batch:
+                    for dim_idx, val in enumerate(batch["observation.state"][i]):
+                        rr.log(f"state/{dim_idx}", rr.Scalar(val.item()))
 
-            if "next.done" in batch:
-                rr.log("next.done", rr.Scalar(batch["next.done"][i].item()))
+                if "next.done" in batch:
+                    rr.log("next.done", rr.Scalar(batch["next.done"][i].item()))
 
-            if "next.reward" in batch:
-                rr.log("next.reward", rr.Scalar(batch["next.reward"][i].item()))
+                if "next.reward" in batch:
+                    rr.log("next.reward", rr.Scalar(batch["next.reward"][i].item()))
 
-            if "next.success" in batch:
-                rr.log("next.success", rr.Scalar(batch["next.success"][i].item()))
+                if "next.success" in batch:
+                    rr.log("next.success", rr.Scalar(batch["next.success"][i].item()))
 
-    if mode == "local" and save:
-        # save .rrd locally
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        repo_id_str = repo_id.replace("/", "_")
-        rrd_path = output_dir / f"{repo_id_str}_episode_{episode_index}.rrd"
-        rr.save(rrd_path)
-        return rrd_path
+        if mode == "local" and save:
+            # save .rrd locally
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            repo_id_str = repo_id.replace("/", "_")
+            rrd_path = output_dir / f"{repo_id_str}_episode_{episode_index}.rrd"
+            rr.save(rrd_path)
+            return rrd_path
 
-    if not save or mode == "distant":  # Viewing mode active
-        if run_duration > 0:
-            logging.info(f"Visualization complete. Auto-exiting in {run_duration} seconds...")
-            time.sleep(run_duration)
-        else:
-            logging.info("Visualization complete. Press Ctrl-C to exit.")
-            try:
-                while True:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                print("\nCtrl-C received. Exiting.")
+        if not save or mode == "distant":  # Viewing mode active
+            if run_duration > 0:
+                logging.info(f"Visualization complete. Auto-exiting in {run_duration} seconds...")
+                time.sleep(run_duration)
+            else:
+                logging.info("Visualization complete. Press Ctrl-C to exit.")
+                try:
+                    if stop_event is None:
+                        print("stop_event should been set")
+                        raise ValueError(stop_event)
+                    while stop_event.is_set() is False:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    print("\nCtrl-C received. Exiting.")
+
+    finally:
+        rr.disconnect()
 
 
 def main():
@@ -250,13 +260,13 @@ def main():
     parser.add_argument(
         "--web-port",
         type=int,
-        default=9092,
+        default=9095,
         help="Web port for rerun.io when `--mode distant` is set.",
     )
     parser.add_argument(
         "--ws-port",
         type=int,
-        default=9878,
+        default=9185,
         help="Web socket port for rerun.io when `--mode distant` is set.",
     )
     parser.add_argument(
@@ -288,9 +298,15 @@ def main():
     tolerance_s = kwargs.pop("tolerance_s")
 
     logging.info("Loading dataset")
+
+    stop_event = Event()
     dataset = DoRobotDataset(repo_id, root=root, tolerance_s=tolerance_s)
 
-    visualize_dataset(dataset, **vars(args))
+    # try:
+    visualize_dataset(dataset, **vars(args), stop_event=stop_event)
+    # except KeyboardInterrupt:
+    #     print("\nCtrl-C received. Exiting.")
+
 
 
 if __name__ == "__main__":
