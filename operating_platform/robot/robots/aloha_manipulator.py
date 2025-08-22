@@ -565,46 +565,49 @@ class AlohaManipulator:
 
 
 
-    # def send_action(self, action: torch.Tensor):
-    #     """The provided action is expected to be a vector."""
-    #     if not self.is_connected:
-    #         raise RobotDeviceNotConnectedError(
-    #             "KochRobot is not connected. You need to run `robot.connect()`."
-    #         )
-    #     from_idx = 0
-    #     to_idx = 8
-    #     index = 0
-    #     action_sent = []
-    #     for name in self.follower_arms:
+    def send_action(self, action: torch.Tensor):
+        """The provided action is expected to be a vector."""
+        if not self.is_connected:
+            raise RobotDeviceNotConnectedError(
+                "KochRobot is not connected. You need to run `robot.connect()`."
+            )
 
-    #         goal_pos = action[index*8+from_idx:index*8+to_idx]
-    #         index+=1
+        return
 
-    #         for i in range(7):
-    #             self.follower_arms[name].joint_send[i] = max(self.follower_arms[name].joint_n_limit[i], min(self.follower_arms[name].joint_p_limit[i], goal_pos[i]))
+        # from_idx = 0
+        # to_idx = 8
+        # index = 0
+        # action_sent = []
+        # for name in self.follower_arms:
+
+        #     goal_pos = action[index*8+from_idx:index*8+to_idx]
+        #     index+=1
+
+        #     for i in range(7):
+        #         self.follower_arms[name].joint_send[i] = max(self.follower_arms[name].joint_n_limit[i], min(self.follower_arms[name].joint_p_limit[i], goal_pos[i]))
             
             
-    #         self.follower_arms[name].movej_canfd(self.follower_arms[name].joint_send)
-    #         # if (goal_pos[7]<50):
-    #         #     # ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, int(follower_goal_pos_array[7]), 1, 1)
-    #         #     ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, 0 , 1, 1)
-    #         #     self.gipflag_send=0
-    #         # #状态为闭合，且需要张开夹爪
-    #         # if (goal_pos[7]>=50):
-    #         #     # ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, int(follower_goal_pos_array[7]), 1, 1)
-    #         #     ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, 100, 1, 1)
-    #         #     self.gipflag_send=1
-    #         gripper_value = max(0, min(100, int(goal_pos[7])))
+        #     self.follower_arms[name].movej_canfd(self.follower_arms[name].joint_send)
+        #     # if (goal_pos[7]<50):
+        #     #     # ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, int(follower_goal_pos_array[7]), 1, 1)
+        #     #     ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, 0 , 1, 1)
+        #     #     self.gipflag_send=0
+        #     # #状态为闭合，且需要张开夹爪
+        #     # if (goal_pos[7]>=50):
+        #     #     # ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, int(follower_goal_pos_array[7]), 1, 1)
+        #     #     ret_giper = self.pDll.Write_Single_Register(self.nSocket, 1, 40000, 100, 1, 1)
+        #     #     self.gipflag_send=1
+        #     gripper_value = max(0, min(100, int(goal_pos[7])))
 
-    #         self.frame_counter += 1
+        #     self.frame_counter += 1
 
-    #         self.follower_arms[name].old_grasp = gripper_value
-    #         if self.frame_counter % 5 == 0:
-    #             self.frame_counter = 0
-    #             self.follower_arms[name].write_single_register(gripper_value)
-    #         action_sent.append(goal_pos)
+        #     self.follower_arms[name].old_grasp = gripper_value
+        #     if self.frame_counter % 5 == 0:
+        #         self.frame_counter = 0
+        #         self.follower_arms[name].write_single_register(gripper_value)
+        #     action_sent.append(goal_pos)
 
-    #     return torch.cat(action_sent)
+        # return torch.cat(action_sent)
 
     def disconnect(self):
         if not self.is_connected:

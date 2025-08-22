@@ -11,6 +11,19 @@ def get_today_date():
     date_string = today.strftime("%Y%m%d")
     return date_string
 
+ 
+def get_directory_size(directory):
+    """递归计算文件夹的总大小（字节）"""
+    total_size = 0
+    for dirpath, _, filenames in os.walk(directory):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            # 忽略无效链接（可选）
+            if not os.path.exists(file_path):
+                continue
+            total_size += os.path.getsize(file_path)
+    return total_size
+
 def file_size(path,n):
     has_directory = False
     has_file = False
@@ -62,8 +75,8 @@ def file_size(path,n):
                 break
             
             file_path = os.path.join(path,subdir,new_file_name)
-            #print(file_path)
-            file_size += os.path.getsize(file_path)  # 获取文件大小（字节）
+            print(file_path)
+            file_size += get_directory_size(file_path) # 获取文件大小（字节）
         return file_size
                                 
 
@@ -95,6 +108,8 @@ def get_data_size(fold_path, data): # 文件大小单位(MB)
         entries_1 = os.listdir(task_path) 
         for entry in entries_1:
             if entry == "meta":
+                continue
+            if entry == "videos":
                 continue
             data_path = os.path.join(task_path,entry,"chunk-000")
             size_bytes += file_size(data_path,episode_index)
