@@ -373,14 +373,6 @@ class Coordinator:
             
             dataset = DoRobotDataset(repo_id, root=target_dir, episodes=[ep_index])
 
-            # 发送响应
-
-            response_data = {
-                "data": {
-                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
-                },
-            }
-            self.send_response('start_replay', "success", response_data)
             print(f"开始回放数据集: {repo_id}, 目标目录: {target_dir}, 任务数据ID: {task_data_id}, 回放索引: {ep_index}")
 
             replay_dataset_cfg = DatasetReplayConfig(repo_id, ep_index, target_dir, fps=DEFAULT_FPS)
@@ -413,6 +405,14 @@ class Coordinator:
                 daemon=True  # 设置为守护线程，主程序退出时自动终止
             )
             visual_thread.start()
+
+            # 发送响应
+            response_data = {
+                "data": {
+                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                },
+            }
+            self.send_response('start_replay', "success", response_data)
 
             try:
                 replay(replay_cfg)
