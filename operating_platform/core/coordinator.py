@@ -228,6 +228,7 @@ class Coordinator:
             task_id = msg.get('task_id')
             task_name = msg.get('task_name')
             task_data_id = msg.get('task_data_id')
+            countdown_seconds = int(msg.get('countdown_seconds'))
             repo_id=f"{task_name}_{task_id}"
 
             date_str = datetime.now().strftime("%Y%m%d")
@@ -260,6 +261,9 @@ class Coordinator:
 
             # resume 变量现在可用于后续逻辑
             print(f"Resume mode: {'Enabled' if resume else 'Disabled'}")
+
+            print(f"开始采集倒计时{countdown_seconds}s...")
+            time.sleep(countdown_seconds)
 
             record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, video=self.daemon.robot.use_videos, resume=resume, root=target_dir)
             self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg, record_cmd=msg)
@@ -329,6 +333,7 @@ class Coordinator:
 
         elif data.get('cmd') == 'start_replay':
             print("处理开始回放命令...")
+            msg = data.get('msg')
   
             if self.recording == True:
                 self.send_response('start_replay', "fail")

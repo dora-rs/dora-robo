@@ -76,7 +76,10 @@ def file_size(path,n):
             
             file_path = os.path.join(path,subdir,new_file_name)
             print(file_path)
-            file_size += get_directory_size(file_path) # 获取文件大小（字节）
+            if os.path.isdir(file_path):
+                file_size += get_directory_size(file_path) # 获取文件大小（字节）
+            else:
+                file_size += os.path.getsize(file_path) # 获取文件大小（字节）
         return file_size
                                 
 
@@ -110,9 +113,19 @@ def get_data_size(fold_path, data): # 文件大小单位(MB)
             if entry == "meta":
                 continue
             if entry == "videos":
-                continue
-            data_path = os.path.join(task_path,entry,"chunk-000")
-            size_bytes += file_size(data_path,episode_index)
+                if "images" in entries_1:
+                    continue
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "images":
+                data_path = os.path.join(task_path,entry)
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "data":
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "audio":
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
         size_mb = round(size_bytes / (1024 * 1024),2)
         return size_mb
 
