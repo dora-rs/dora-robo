@@ -946,8 +946,9 @@ class DoRobotDataset(torch.utils.data.Dataset):
             self.tolerance_s,
         )
 
-        video_files = list(self.root.rglob("*.mp4"))
-        assert len(video_files) == self.num_episodes * len(self.meta.video_keys)
+        if len(self.meta.video_keys) > 0:
+            video_files = list(self.root.rglob("*.mp4"))
+            assert len(video_files) == self.num_episodes * len(self.meta.video_keys)
 
         parquet_files = list(self.root.rglob("*.parquet"))
         assert len(parquet_files) == self.num_episodes

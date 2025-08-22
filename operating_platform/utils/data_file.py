@@ -24,61 +24,72 @@ def get_directory_size(directory):
             total_size += os.path.getsize(file_path)
     return total_size
 
-def file_size(path,n):
+def file_size(path, n):
     has_directory = False
     has_file = False
-    file_size = 0
+    file_size_bytes = 0
 
-    # 获取目录中的所有条目
     pre_entries = os.listdir(path)
+    if not pre_entries:  # 空目录情况
+        return 0
 
+    # 检查路径下是否有文件或目录
     for entry in pre_entries:
         entry_path = os.path.join(path, entry)
         if os.path.isdir(entry_path):
             has_directory = True
         elif os.path.isfile(entry_path):
             has_file = True
-        break
+        break  # 只需要检查第一个条目
+
     if has_file:
         for file_name in pre_entries:
-            # 分割文件名和扩展名
-            base, ext = file_name.split(".")
-            # 分割前缀和数字部分
+            base, ext = os.path.splitext(file_name)
+            if not ext:
+                continue
+            if "_" not in base:
+                continue
             prefix, old_num = base.rsplit("_", 1)
-            # 计算数字部分的位数
             num_digits = len(old_num)
-            # 格式化新数字，保持位数（用 zfill 补零）
             new_num = str(n).zfill(num_digits)
-            # 重新组合文件名
-            new_file_name = f"{prefix}_{new_num}.{ext}"
-            break
-        file_path = os.path.join(path,new_file_name)
-        #print(file_path)
-        file_size += os.path.getsize(file_path)  # 获取文件大小（字节）
-        return file_size
-
-    if has_directory:
-        # 遍历子目录，查找第 n 个文件
-        for subdir in pre_entries:
-            pre_entry =  os.listdir(os.path.join(path,subdir))
-            for file_name in pre_entry:
-                # 分割文件名和扩展名
-                base, ext = file_name.split(".")
-                # 分割前缀和数字部分
-                prefix, old_num = base.rsplit("_", 1)
-                # 计算数字部分的位数
-                num_digits = len(old_num)
-                # 格式化新数字，保持位数（用 zfill 补零）
-                new_num = str(n).zfill(num_digits)
-                # 重新组合文件名
-                new_file_name = f"{prefix}_{new_num}.{ext}"
+            new_file_name = f"{prefix}_{new_num}{ext}"
+            file_path = os.path.join(path, new_file_name)
+            if os.path.isfile(file_path):
+                file_size_bytes += os.path.getsize(file_path)
                 break
+        return file_size_bytes
+
+    elif has_directory:
+        for subdir in pre_entries:
+            subdir_path = os.path.join(path, subdir)
+            if not os.path.isdir(subdir_path):
+                continue
+                
+            # 先检查子目录中的文件
+            found = False
+            for file_name in os.listdir(subdir_path):
+                base, ext = os.path.splitext(file_name)
+                if not ext:
+                    continue
+                if "_" not in base:
+                    continue
+                prefix, old_num = base.rsplit("_", 1)
+                num_digits = len(old_num)
+                new_num = str(n).zfill(num_digits)
+                new_file_name = f"{prefix}_{new_num}{ext}"
+                file_path = os.path.join(subdir_path, new_file_name)
+                if os.path.isfile(file_path):
+                    file_size_bytes += os.path.getsize(file_path)
+                    found = True
+                    break
             
-            file_path = os.path.join(path,subdir,new_file_name)
-            print(file_path)
-            file_size += get_directory_size(file_path) # 获取文件大小（字节）
-        return file_size
-                                
+            # 如果没找到文件，递归检查子目录
+            if not found:
+                file_size_bytes += get_directory_size(subdir_path)
+                
+        return file_size_bytes
+
+    return 0
 
 def get_data_size(fold_path, data): # 文件大小单位(MB)
     try:
@@ -110,10 +121,20 @@ def get_data_size(fold_path, data): # 文件大小单位(MB)
             if entry == "meta":
                 continue
             if entry == "videos":
-                continue
-            data_path = os.path.join(task_path,entry,"chunk-000")
-            size_bytes += file_size(data_path,episode_index)
-        size_mb = round(size_bytes / (1024 * 1024),2)
+                if "images" in entries_1:
+                    continue
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "images":
+                data_path = os.path.join(task_path,entry)
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "data":
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
+            if entry == "audio":
+                data_path = os.path.join(task_path,entry,"chunk-000")
+                size_bytes += file_size(data_path,episode_index)
+        size_mb = round(size_bytes / (1024 * 1024), 2)
         return size_mb
 
 

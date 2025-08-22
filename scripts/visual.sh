@@ -16,3 +16,8 @@ python operating_platform/dataset/visual/visual_dataset.py \
     --repo-id 20250820/dev/''$'\345\200\222\346\260\264''_Pour the waterCopy0725testCopy_226' \
     --episode-index 0 \
     --mode distant
+
+python operating_platform/dataset/visual/visual_dataset.py \
+    --repo-id "20250822/dev/水果收纳_测试采集任务11CopyCopy_276" \
+    --episode-index 4 \
+    --mode distant

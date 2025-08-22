@@ -35,6 +35,8 @@ from operating_platform.core.record import Record, RecordConfig
 from operating_platform.core.replay import DatasetReplayConfig, ReplayConfig, replay
 
 DEFAULT_FPS = 30
+RERUN_WEB_PORT = 9095
+RERUN_WS_PORT = 9185
 
 @cache
 def is_headless():
@@ -228,6 +230,7 @@ class Coordinator:
             task_id = msg.get('task_id')
             task_name = msg.get('task_name')
             task_data_id = msg.get('task_data_id')
+            countdown_seconds = int(msg.get('countdown_seconds'))
             repo_id=f"{task_name}_{task_id}"
 
             date_str = datetime.now().strftime("%Y%m%d")
@@ -264,10 +267,15 @@ class Coordinator:
             record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, video=self.daemon.robot.use_videos, resume=resume, root=target_dir)
             self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg, record_cmd=msg)
             
-            self.record.start()
-
             # 发送响应
             self.send_response('start_collection', "success")
+
+            # 开始采集倒计时
+            print(f"开始采集倒计时{countdown_seconds}s...")
+            time.sleep(countdown_seconds)
+
+            # 开始采集
+            self.record.start()
         
         elif data.get('cmd') == 'finish_collection':
             print("处理完成采集命令...")
@@ -329,6 +337,7 @@ class Coordinator:
 
         elif data.get('cmd') == 'start_replay':
             print("处理开始回放命令...")
+            msg = data.get('msg')
   
             if self.recording == True:
                 self.send_response('start_replay', "fail")
@@ -365,7 +374,13 @@ class Coordinator:
             dataset = DoRobotDataset(repo_id, root=target_dir, episodes=[ep_index])
 
             # 发送响应
-            self.send_response('start_replay', "success")
+
+            response_data = {
+                "data": {
+                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                },
+            }
+            self.send_response('start_replay', "success", response_data)
             print(f"开始回放数据集: {repo_id}, 目标目录: {target_dir}, 任务数据ID: {task_data_id}, 回放索引: {ep_index}")
 
             replay_dataset_cfg = DatasetReplayConfig(repo_id, ep_index, target_dir, fps=DEFAULT_FPS)
@@ -383,7 +398,9 @@ class Coordinator:
                     visualize_dataset(
                         dataset,
                         mode="distant",
-                        episode_index=ep_index,
+                        episode_index=0,
+                        web_port=RERUN_WEB_PORT,
+                        ws_port=RERUN_WS_PORT,
                         stop_event=stop_event  # 需要replay函数支持stop_event参数
                     )
                 except Exception as e:
