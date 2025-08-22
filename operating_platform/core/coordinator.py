@@ -262,16 +262,18 @@ class Coordinator:
             # resume 变量现在可用于后续逻辑
             print(f"Resume mode: {'Enabled' if resume else 'Disabled'}")
 
-            print(f"开始采集倒计时{countdown_seconds}s...")
-            time.sleep(countdown_seconds)
-
             record_cfg = RecordConfig(fps=DEFAULT_FPS, repo_id=repo_id, video=self.daemon.robot.use_videos, resume=resume, root=target_dir)
             self.record = Record(fps=DEFAULT_FPS, robot=self.daemon.robot, daemon=self.daemon, record_cfg = record_cfg, record_cmd=msg)
             
-            self.record.start()
-
             # 发送响应
             self.send_response('start_collection', "success")
+
+            # 开始采集倒计时
+            print(f"开始采集倒计时{countdown_seconds}s...")
+            time.sleep(countdown_seconds)
+
+            # 开始采集
+            self.record.start()
         
         elif data.get('cmd') == 'finish_collection':
             print("处理完成采集命令...")
