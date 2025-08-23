@@ -22,7 +22,7 @@ from datetime import datetime
 from operating_platform.robot.robots.configs import RobotConfig
 from operating_platform.robot.robots.utils import make_robot_from_config, Robot, busy_wait, safe_disconnect
 from operating_platform.utils import parser
-from operating_platform.utils.utils import has_method, init_logging, log_say, get_current_git_branch, git_branch_log
+from operating_platform.utils.utils import has_method, init_logging, log_say, get_current_git_branch, git_branch_log, get_container_ip_from_hosts
 from operating_platform.utils.data_file import find_epindex_from_dataid_json
 
 from operating_platform.utils.constants import DOROBOT_DATASET
@@ -119,7 +119,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     return json.dumps(result)
 
 class Coordinator:
-    def __init__(self, daemon: Daemon, server_url="http://localhost:8088"):
+    def __init__(self, daemon: Daemon, server_url="http://host.docker.internal:8088"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
@@ -406,10 +406,11 @@ class Coordinator:
             )
             visual_thread.start()
 
+            d_container_ip = get_container_ip_from_hosts()
             # 发送响应
             response_data = {
                 "data": {
-                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                    "url": f"http://{d_container_ip}:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
                 },
             }
             self.send_response('start_replay', "success", response_data)

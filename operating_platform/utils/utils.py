@@ -52,6 +52,22 @@ def auto_select_torch_device() -> torch.device:
     else:
         logging.warning("No accelerated backend detected. Using default cpu, this will be slow.")
         return torch.device("cpu")
+    
+def get_container_ip_from_hosts():
+    """通过 /etc/hosts 获取容器 IP（Docker 默认写入）"""
+    hostname = None
+    with open('/proc/sys/kernel/hostname', 'r') as f:
+        hostname = f.read().strip()
+    
+    with open('/etc/hosts', 'r') as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            parts = line.split()
+            if len(parts) > 1 and parts[1] == hostname:
+                return parts[0]
+    
+    raise RuntimeError("无法从 /etc/hosts 获取 IP")
 
 # TODO(Steven): Remove log. log shouldn't be an argument, this should be handled by the logger level
 def get_safe_torch_device(try_device: str, log: bool = False) -> torch.device:
