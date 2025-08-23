@@ -37,7 +37,6 @@ nodes:
       wget -nc -P urdf/ https://raw.githubusercontent.com/agilexrobotics/Piper_ros/4f22c61f96b8fb3ef3f937b99b63edb697caadf0/src/piper_description/meshes/link6.STL
       wget -nc -P urdf/ https://raw.githubusercontent.com/agilexrobotics/Piper_ros/4f22c61f96b8fb3ef3f937b99b63edb697caadf0/src/piper_description/meshes/link7.STL
       wget -nc -P urdf/ https://raw.githubusercontent.com/agilexrobotics/Piper_ros/4f22c61f96b8fb3ef3f937b99b63edb697caadf0/src/piper_description/meshes/link8.STL
-      pip install git+https://github.com/rerun-io/rerun-loader-python-example-urdf.git
 
     inputs:
       jointstate_piper_left: piper_left/jointstate
