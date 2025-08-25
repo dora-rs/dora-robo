@@ -15,7 +15,7 @@ echo "正在创建并启动容器，并挂载当前目录..."
 docker run -it \
   --name operating_platform \
   --privileged \
-  --network \
+  --network host\
   --shm-size=8g \
   -v "$(pwd)":/Operating-Platform \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
