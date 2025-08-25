@@ -119,7 +119,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     return json.dumps(result)
 
 class Coordinator:
-    def __init__(self, daemon: Daemon, server_url="http://host.docker.internal:8088"):
+    def __init__(self, daemon: Daemon, server_url="http://localhost:8088"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
@@ -406,11 +406,11 @@ class Coordinator:
             )
             visual_thread.start()
 
-            d_container_ip = get_container_ip_from_hosts()
+            # d_container_ip = get_container_ip_from_hosts()
             # 发送响应
             response_data = {
                 "data": {
-                    "url": f"http://{d_container_ip}:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
                 },
             }
             self.send_response('start_replay', "success", response_data)
