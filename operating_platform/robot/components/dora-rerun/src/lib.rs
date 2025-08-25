@@ -59,12 +59,12 @@ pub fn lib_main() -> Result<()> {
             .context("Could not spawn rerun visualization")?,
         Ok("GRPC") => {
             let web_view_config = rerun::web_viewer::WebViewerConfig {
-                bind_ip: "0.0.0.0".to_string(),
+                bind_ip: "127.0.0.1".to_string(),
                 web_port: WebViewerServerPort(9060),
                 connect_to: Some("rerun+http://localhost:9876/proxy".to_string()),
                 force_wgpu_backend: None,
                 video_decoder: None,
-                open_browser: true,
+                open_browser: false,
             };
             let web_view_server = rerun::web_viewer::serve_web_viewer(web_view_config)?;
             web_view_server.detach();

@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
     "dora-rs-cli (>=0.3.11,<0.4.0)",
-    "dora-rerun"
+    "piper_sdk >= 0.0.8",
 ]
 
 [tool.setuptools]
