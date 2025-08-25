@@ -134,6 +134,10 @@ sleep 5  # 简单的依赖等待
 log "启动协调器..."
 execute_in_container "cd $PROJECT_DIR && $CONDA_ACTIVATE $CONDA_ENV2 && python operating_platform/core/coordinator.py --robot.type=aloha" "coordinator.log"
 
+log "打开Rerun 3D View - 请在浏览器打开"http://localhost:9060?url=rerun%2Bhttp%3A%2F%2Flocalhost%3A9876%2Fproxy""
+# execute_in_container "xdg-open "http://localhost:9060?url=rerun%2Bhttp%3A%2F%2Flocalhost%3A9876%2Fproxy""
+# execute_in_container "xdg-open "http://localhost:9060?url=ws://localhost:9876""
+
 log "所有进程已启动，PID记录在.pids文件中"
 log "监控日志文件："
 echo "- dataflow.log"
