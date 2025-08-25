@@ -47,8 +47,7 @@ nodes:
       piper_left_transform: 0 0.3 0
       piper_right_transform: 0 -0.3 0
       RERUN_MEMORY_LIMIT: 25%
-      OPERATING_MODE: CONNECT
-      RERUN_SERVER_ADDR: rerun+http://127.0.0.1:9876/proxy
+      OPERATING_MODE: GRPC
 
   - id: print_joint
     path: print_joint.py

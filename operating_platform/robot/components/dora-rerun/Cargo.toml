@@ -34,6 +34,7 @@ pyo3 = { version = "0.21", features = [
 bytemuck = "1.20.0"
 rand = "0.9.1"
 pinyin = "0.10.0"
+re_web_viewer_server = "0.23.4"
 
 [lib]
 name = "dora_rerun"
