@@ -203,5 +203,8 @@ docker/*.tar*
 
 **/poetry.lock
 
+**/result
+*.parquet
+
 *.STL
 .pids

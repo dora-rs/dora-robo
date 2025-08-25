@@ -8,21 +8,26 @@ echo "清理旧容器（如果存在）..."
 docker stop operating_platform 2>/dev/null || true
 docker rm operating_platform 2>/dev/null || true
 
+GATEWAY_IP=$(docker network inspect dorobot_net --format '{{(index .IPAM.Config 0).Gateway}}')
+
 # 2. 创建并启动新容器，挂载当前目录到容器的 /app 目录
 echo "正在创建并启动容器，并挂载当前目录..."
 docker run -it \
   --name operating_platform \
   --privileged \
-  --network host \
+  --network dorobot_net \
+  --ip 172.6.0.25 \
+  --add-host=host.docker.internal:$GATEWAY_IP \
+  --sysctl net.ipv4.ip_unprivileged_port_start=0 \
   --shm-size=8g \
   -v "$(pwd)":/Operating-Platform \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -e DISPLAY=$DISPLAY \
   -e XDG_RUNTIME_DIR=/tmp \
-  -e http_proxy=http://127.0.0.1:7897 \
-  -e https_proxy=http://127.0.0.1:7897 \
+  -e http_proxy=http://$GATEWAY_IP:7897 \
+  -e https_proxy=http://$GATEWAY_IP:7897 \
   -e DOROBOT_HOME=/root/DoRobot \
-  operating-platform:V1.6_ubuntu20
+  operating-platform:V1.7_ubuntu20
 
 # 3. 检查容器是否运行
 if [ "$(docker inspect -f '{{.State.Running}}' operating_platform 2>/dev/null)" == "true" ]; then

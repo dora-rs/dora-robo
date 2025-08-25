@@ -38,6 +38,7 @@ dependencies = [
     "matplotlib>=3.10.3",
     "sounddevice",
     "soundfile",
+    "seaborn",
 ]
 
 [tool.setuptools]
