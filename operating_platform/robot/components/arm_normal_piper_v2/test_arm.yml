@@ -12,7 +12,6 @@ nodes:
       - slave-gripper
     env:
       CAN_BUS: can_right
-      TEACH_MODE: True
 
   - id: piper_left
     path: main.py
@@ -27,7 +26,6 @@ nodes:
       - slave-gripper
     env:
       CAN_BUS: can_left
-      TEACH_MODE: True
 
   # - id: rerun
   #   path: dora-rerun

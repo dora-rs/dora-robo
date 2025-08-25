@@ -37,6 +37,7 @@ pub fn lib_main() -> Result<()> {
     let mut mask_cache: HashMap<DataId, Vec<bool>> = HashMap::new();
     let mut color_cache: HashMap<DataId, rerun::Color> = HashMap::new();
     let mut options = SpawnOptions::default();
+    let mut web_view_config = WebViewerConfig::default();
 
     let memory_limit = match std::env::var("RERUN_MEMORY_LIMIT") {
         Ok(memory_limit) => memory_limit
@@ -54,6 +55,14 @@ pub fn lib_main() -> Result<()> {
         Ok("SPAWN") => rerun::RecordingStreamBuilder::new("dora-rerun")
             .spawn_opts(&options, None)
             .context("Could not spawn rerun visualization")?,
+        Ok("GRPC") => {
+            rerun::RecordingStreamBuilder::new("dora-rerun")
+                .serve_grpc()
+                .context("Could not start rerun visualization with gRPC")?
+
+            web_view_config.connect_to = "rerun+http://localhost/proxy".to_string()
+            rerun::web_viewer.serve_web_viewer(web_view_config)?;
+        }
         Ok("CONNECT") => {
             let opt = std::env::var("RERUN_SERVER_ADDR").unwrap_or("127.0.0.1:9876".to_string());
 

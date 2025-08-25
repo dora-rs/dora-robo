@@ -46,6 +46,19 @@ recv_follower_pose = {}
 recv_follower_gripper = {}
 lock = threading.Lock()  # 线程锁
 
+
+def zmq_send(event_id, buffer):
+    buffer_bytes = buffer.tobytes()
+    try:
+        socket.send_multipart([
+            event_id.encode('utf-8'),
+            buffer_bytes
+        ], flags=zmq.NOBLOCK)
+    except zmq.Again:
+        pass
+    time.sleep(0.01)
+
+
 def recv_server():
     """接收数据线程"""
     while running_server:
@@ -572,7 +585,23 @@ class AlohaManipulator:
                 "KochRobot is not connected. You need to run `robot.connect()`."
             )
 
-        return
+        from_idx = 0
+        to_idx = 6
+        arm_action_dim = 13
+        arm_index = 0
+        action_sent = []
+        for name in self.follower_arms:
+
+            goal_joint = action[(arm_index*arm_action_dim+from_idx):(arm_index*arm_action_dim+to_idx)]
+            goal_gripper = action[arm_index*arm_action_dim + 12]
+            arm_index += 1
+
+            zmq_send(f"action_joint_{name}", goal_joint)
+            zmq_send(f"action_gripper_{name}", goal_gripper)
+
+            action_sent.append(goal_joint)
+
+        return torch.cat(action_sent)
 
         # from_idx = 0
         # to_idx = 8

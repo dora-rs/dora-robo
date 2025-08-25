@@ -36,6 +36,8 @@ nodes:
     path: ../../components/arm_normal_piper_v2/main.py
     inputs:
       tick: dora/timer/millis/33
+      action_joint: zeromq/action_joint_right
+      action_gripper: zeromq/action_gripper_right
     outputs:
       # - master_endpose
       - master_jointstate
@@ -51,6 +53,8 @@ nodes:
     path: ../../components/arm_normal_piper_v2/main.py
     inputs:
       tick: dora/timer/millis/33
+      action_joint: zeromq/action_joint_left
+      action_gripper: zeromq/action_gripper_left
     outputs:
       # - master_endpose
       - master_jointstate
@@ -61,6 +65,18 @@ nodes:
     env:
       CAN_BUS: can_left
       TEACH_MODE: True
+
+  # - id: action-splitter
+  #   path: action_splitter.py
+  #   inputs:
+  #     actions: zeromq/actions
+  #   outputs:
+  #     - right_action_joint
+  #     # - right_action_endpose
+  #     - right_action_gripper
+  #     - left_action_joint
+  #     # - left_action_endpose
+  #     - left_action_gripper
 
   - id: zeromq
     path: ../dora_zeromq.py
@@ -83,6 +99,12 @@ nodes:
       follower_endpose_left: piper_left/slave_endpose
       follower_gripper_right: piper_right/slave_gripper
       follower_gripper_left: piper_left/slave_gripper
+    outputs:
+      - action_joint_right
+      - action_joint_left
+      - action_gripper_right
+      - action_gripper_left
+
 
   # - id: rerun
   #   path: dora-rerun
