@@ -5,10 +5,13 @@ from deepdiff import DeepDiff
 from dataclasses import dataclass
 
 from operating_platform.robot.robots.configs import RobotConfig
-from operating_platform.robot.robots.utils import Robot, busy_wait, safe_disconnect
+from operating_platform.robot.robots.utils import Robot, busy_wait, safe_disconnect, make_robot_from_config
 
 from operating_platform.dataset.dorobot_dataset import *
 from operating_platform.core.daemon import Daemon
+import draccus
+from operating_platform.utils import parser
+from operating_platform.utils.utils import has_method, init_logging, log_say, get_current_git_branch, git_branch_log, get_container_ip_from_hosts
 
 from operating_platform.utils.constants import DOROBOT_DATASET
 from operating_platform.utils.data_file import (
@@ -95,6 +98,8 @@ class RecordConfig():
     # Resume recording on an existing dataset.
     resume: bool = False
 
+    record_cmd = None
+
 
 class Record:
     def __init__(self, fps: int, robot: Robot, daemon: Daemon, record_cfg: RecordConfig, record_cmd):
@@ -102,7 +107,7 @@ class Record:
         self.daemon = daemon
         self.record_cfg = record_cfg
         self.fps = fps
-        self.record_cmd = record_cmd
+        self.record_cmd = record_cfg.record_cmd
         self.last_record_episode_index = 0
         self.record_complete = False
         self.save_data = None
@@ -226,3 +231,40 @@ class Record:
 #         if display_cameras:
 #             # cv2.destroyAllWindows()
 #             pass
+
+# @dataclass
+# class RecordConfig:
+#     robot: Robot
+#     dataset: DatasetReplayConfig
+#     # Use vocal synthesis to read events.
+#     play_sounds: bool = False
+
+@dataclass
+class ControlPipelineConfig:
+    robot: RobotConfig
+    # control: ControlConfig
+    record: RecordConfig
+
+    @classmethod
+    def __get_path_fields__(cls) -> list[str]:
+        """This enables the parser to load config from the policy using `--policy.path=local/dir`"""
+        return ["control.policy"]
+
+@parser.wrap()
+def record(cfg: ControlPipelineConfig):
+    init_logging()
+    git_branch_log()
+
+    # daemon = Daemon(fps=DEFAULT_FPS)
+    # daemon.start(cfg.robot)
+
+    # robot_daemon = Record(cfg.fps,cfg.)
+
+    # robot_daemon.start()
+
+
+def main():
+    record()
+
+if __name__ == "__main__":
+    main()
