@@ -371,7 +371,7 @@ class Coordinator:
 
             ep_index = find_epindex_from_dataid_json(target_dir, task_data_id)
             
-            dataset = DoRobotDataset(repo_id, root=target_dir, episodes=[ep_index])
+            dataset = DoRobotDataset(repo_id, root=target_dir)
 
             print(f"开始回放数据集: {repo_id}, 目标目录: {target_dir}, 任务数据ID: {task_data_id}, 回放索引: {ep_index}")
 
@@ -390,7 +390,7 @@ class Coordinator:
                     visualize_dataset(
                         dataset,
                         mode="distant",
-                        episode_index=0,
+                        episode_index=ep_index,
                         web_port=RERUN_WEB_PORT,
                         ws_port=RERUN_WS_PORT,
                         stop_event=stop_event  # 需要replay函数支持stop_event参数
