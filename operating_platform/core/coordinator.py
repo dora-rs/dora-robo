@@ -35,8 +35,8 @@ from operating_platform.core.record import Record, RecordConfig
 from operating_platform.core.replay import DatasetReplayConfig, ReplayConfig, replay
 
 DEFAULT_FPS = 30
-RERUN_WEB_PORT = 9095
-RERUN_WS_PORT = 9185
+RERUN_WEB_PORT = 9195
+RERUN_WS_PORT = 9285
 
 @cache
 def is_headless():
@@ -119,7 +119,7 @@ def cameras_to_stream_json(cameras: dict[str, int]):
     return json.dumps(result)
 
 class Coordinator:
-    def __init__(self, daemon: Daemon, server_url="http://host.docker.internal:8088"):
+    def __init__(self, daemon: Daemon, server_url="http://localhost:8088"):
         self.server_url = server_url
         self.sio = socketio.Client()
         self.session = requests.Session()
@@ -371,7 +371,7 @@ class Coordinator:
 
             ep_index = find_epindex_from_dataid_json(target_dir, task_data_id)
             
-            dataset = DoRobotDataset(repo_id, root=target_dir, episodes=[ep_index])
+            dataset = DoRobotDataset(repo_id, root=target_dir)
 
             print(f"开始回放数据集: {repo_id}, 目标目录: {target_dir}, 任务数据ID: {task_data_id}, 回放索引: {ep_index}")
 
@@ -390,7 +390,7 @@ class Coordinator:
                     visualize_dataset(
                         dataset,
                         mode="distant",
-                        episode_index=0,
+                        episode_index=ep_index,
                         web_port=RERUN_WEB_PORT,
                         ws_port=RERUN_WS_PORT,
                         stop_event=stop_event  # 需要replay函数支持stop_event参数
@@ -406,11 +406,11 @@ class Coordinator:
             )
             visual_thread.start()
 
-            d_container_ip = get_container_ip_from_hosts()
+            # d_container_ip = get_container_ip_from_hosts()
             # 发送响应
             response_data = {
                 "data": {
-                    "url": f"http://{d_container_ip}:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
+                    "url": f"http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}",
                 },
             }
             self.send_response('start_replay', "success", response_data)

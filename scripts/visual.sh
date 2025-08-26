@@ -28,6 +28,12 @@ python operating_platform/dataset/visual/visual_dataset.py \
     --mode distant
 
 python operating_platform/dataset/visual/visual_dataset.py \
-    --repo-id "20250822/user/倒水_Pour the waterCopy0725testCopy_226" \
-    --episode-index 1 \
+    --repo-id "20250826/dev/倒水_111_277" \
+    --episode-index 0 \
     --mode distant
+
+
+python operating_platform/core/replay.py \
+    --robot aloha \
+    --dataset.repo_id "20250826/dev/倒水_111_277" \
+    --dataset.episode 0

@@ -13,6 +13,7 @@ import torch
 from concurrent.futures import ThreadPoolExecutor
 from collections import deque
 from functools import cache
+from typing import Any
 
 import threading
 import cv2
@@ -34,6 +35,8 @@ ipc_address = "ipc:///tmp/dora-zeromq"
 context = zmq.Context()
 socket = context.socket(zmq.PAIR)
 socket.connect(ipc_address)
+socket.setsockopt(zmq.SNDHWM, 2000)
+socket.setsockopt(zmq.SNDBUF, 2**25)
 socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
 
 running_server = True
@@ -45,6 +48,20 @@ recv_follower_jointstats = {}
 recv_follower_pose = {}
 recv_follower_gripper = {}
 lock = threading.Lock()  # 线程锁
+
+
+def zmq_send(event_id, buffer):
+    buffer_bytes = buffer.tobytes()
+    print(f"zmq send event_id:{event_id}, value:{buffer}")
+    try:
+        socket.send_multipart([
+            event_id.encode('utf-8'),
+            buffer_bytes
+        ], flags=zmq.NOBLOCK)
+    except zmq.Again:
+        pass
+    time.sleep(0.01)
+
 
 def recv_server():
     """接收数据线程"""
@@ -565,14 +582,34 @@ class AlohaManipulator:
 
 
 
-    def send_action(self, action: torch.Tensor):
+    def send_action(self, action: dict[str, Any]):
         """The provided action is expected to be a vector."""
         if not self.is_connected:
             raise RobotDeviceNotConnectedError(
                 "KochRobot is not connected. You need to run `robot.connect()`."
             )
 
-        return
+        # from_idx = 0
+        # to_idx = 6
+        # arm_action_dim = 13
+        # arm_index = 0
+        # action_sent = []
+        for name in self.follower_arms:
+            goal_joint = [ val for key, val in action.items() if name in key and "joint" in key]
+            goal_gripper = [ val for key, val in action.items() if name in key and "gripper" in key]
+
+            # goal_joint = action[(arm_index*arm_action_dim+from_idx):(arm_index*arm_action_dim+to_idx)]
+            # goal_gripper = action[arm_index*arm_action_dim + 12]
+            # arm_index += 1
+            goal_joint_numpy = np.array([t.item() for t in goal_joint], dtype=np.float32)
+            goal_gripper_numpy = np.array([t.item() for t in goal_gripper], dtype=np.float32)
+
+            zmq_send(f"action_joint_{name}", goal_joint_numpy)
+            zmq_send(f"action_gripper_{name}", goal_gripper_numpy)
+
+            # action_sent.append(goal_joint)
+
+        # return torch.cat(action_sent)
 
         # from_idx = 0
         # to_idx = 8

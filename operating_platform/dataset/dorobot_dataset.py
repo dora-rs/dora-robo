@@ -132,6 +132,11 @@ class DoRobotDatasetMetadata:
         ep_chunk = self.get_episode_chunk(ep_index)
         fpath = self.data_path.format(episode_chunk=ep_chunk, episode_index=ep_index)
         return Path(fpath)
+    
+    def get_image_file_path(self, ep_index: int, img_key: str, frame_index) -> Path:
+        # ep_chunk = self.get_episode_chunk(ep_index)
+        fpath = self.image_path.format(image_key=img_key, episode_index=ep_index, frame_index=frame_index)
+        return Path(fpath)
 
     def get_video_file_path(self, ep_index: int, vid_key: str) -> Path:
         ep_chunk = self.get_episode_chunk(ep_index)
@@ -155,6 +160,11 @@ class DoRobotDatasetMetadata:
     def video_path(self) -> str | None:
         """Formattable string for the video files."""
         return self.info["video_path"]
+    
+    @property
+    def image_path(self) -> str | None:
+        """Formattable string for the audio files."""
+        return self.info["image_path"]
     
     @property
     def audio_path(self) -> str | None:
@@ -1000,7 +1010,7 @@ class DoRobotDataset(torch.utils.data.Dataset):
                 image_dir = self.root / self._get_image_file_path(ep_idx, key, frame_index=0).parent
                 if os.path.isdir(image_dir):
                     print(f"[DEBUG] 删除图片文件夹: {image_dir}")
-                    os.remove(image_dir)
+                    shutil.rmtree(image_dir)
                     # 验证删除结果
                     if not os.path.exists(image_dir):
                         print(f"[SUCCESS] 成功删除图片文件夹: {image_dir}")

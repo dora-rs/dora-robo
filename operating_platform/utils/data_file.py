@@ -69,8 +69,6 @@ def file_size(path, n):
             found = False
             for file_name in os.listdir(subdir_path):
                 base, ext = os.path.splitext(file_name)
-                if not ext:
-                    continue
                 if "_" not in base:
                     continue
                 prefix, old_num = base.rsplit("_", 1)
@@ -82,10 +80,10 @@ def file_size(path, n):
                     file_size_bytes += os.path.getsize(file_path)
                     found = True
                     break
-            
-            # 如果没找到文件，递归检查子目录
-            if not found:
-                file_size_bytes += get_directory_size(subdir_path)
+                # 如果没找到文件，递归检查子目录
+                if not found:
+                    file_size_bytes += get_directory_size(subdir_path)
+                break
                 
         return file_size_bytes
 

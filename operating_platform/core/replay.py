@@ -61,6 +61,7 @@ def replay(cfg: ReplayConfig):
         for i, name in enumerate(dataset.features["action"]["names"]):
             action[name] = action_array[i]
 
+        # print(f"action: {action}")
         robot.send_action(action)
 
         dt_s = time.perf_counter() - start_episode_t

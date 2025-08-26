@@ -1,6 +1,6 @@
 [package]
 name = "dora-rerun"
-version = "0.1.0"            # 手动指定版本
+version = "0.3.12"           # 手动指定版本
 edition = "2024"             # 建议使用 2021（除非你明确需要 2024）
 rust-version = "1.89"        # 指定最低支持的 Rust 版本（可根据项目调整）
 description = "A Dora component for Rerun visualization"  # 必填项（crates.io 要求）
@@ -34,6 +34,7 @@ pyo3 = { version = "0.21", features = [
 bytemuck = "1.20.0"
 rand = "0.9.1"
 pinyin = "0.10.0"
+re_web_viewer_server = "0.23.4"
 
 [lib]
 name = "dora_rerun"

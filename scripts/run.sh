@@ -5,6 +5,7 @@ CONTAINER_NAME="operating_platform"
 PROJECT_DIR="/root/Operating-Platform"
 CONDA_ENV1="op-robot-aloha"
 CONDA_ENV2="op"
+CONDA_ENV3="dr-view-rerun"
 DATAFLOW_PATH="operating_platform/robot/robots/aloha_v1/robot_aloha_dataflow.yml"
 TIMEOUT=30  # 等待超时时间（秒）
 CLEANED_UP=false
@@ -133,6 +134,16 @@ sleep 5  # 简单的依赖等待
 
 log "启动协调器..."
 execute_in_container "cd $PROJECT_DIR && $CONDA_ACTIVATE $CONDA_ENV2 && python operating_platform/core/coordinator.py --robot.type=aloha" "coordinator.log"
+
+sleep 2  # 简单的依赖等待
+
+log "启动Rerun 3D View..."
+execute_in_container "cd $PROJECT_DIR && $CONDA_ACTIVATE $CONDA_ENV3 && cd test/piper && dora run arms_only_web.yml" "rerun_3d_view.log"
+
+
+log "打开Rerun 3D View - 请在浏览器打开"http://localhost:9060?url=rerun%2Bhttp%3A%2F%2Flocalhost%3A9876%2Fproxy""
+# execute_in_container "xdg-open "http://localhost:9060?url=rerun%2Bhttp%3A%2F%2Flocalhost%3A9876%2Fproxy""
+# execute_in_container "xdg-open "http://localhost:9060?url=ws://localhost:9876""
 
 log "所有进程已启动，PID记录在.pids文件中"
 log "监控日志文件："

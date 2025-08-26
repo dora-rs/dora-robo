@@ -8,40 +8,27 @@ import pyarrow as pa
 from dora import Node
 from piper_sdk import C_PiperInterface
 
-TEACH_MODE = os.getenv("TEACH_MODE", "False") in ["True", "true"]
-
 
 def enable_fun(piper: C_PiperInterface):
-    """使能机械臂并检测使能状态,尝试5s,如果使能超时则退出程序."""
+    """使能机械臂并检测使能状态,尝试0.05s,如果使能超时则退出程序."""
     enable_flag = False
-    # 设置超时时间（秒）
-    timeout = 5
-    # 记录进入循环前的时间
+
+    timeout = 0.05  # 超时时间（秒）
+    interval = 0.01  # 每次轮询间隔（秒）
+    
     start_time = time.time()
-    elapsed_time_flag = False
-    while not (enable_flag):
-        elapsed_time = time.time() - start_time
+    while not enable_flag:
+        enable_flag = piper.EnablePiper()
+        
         print("--------------------")
-        enable_flag = (
-            piper.GetArmLowSpdInfoMsgs().motor_1.foc_status.driver_enable_status
-            and piper.GetArmLowSpdInfoMsgs().motor_2.foc_status.driver_enable_status
-            and piper.GetArmLowSpdInfoMsgs().motor_3.foc_status.driver_enable_status
-            and piper.GetArmLowSpdInfoMsgs().motor_4.foc_status.driver_enable_status
-            and piper.GetArmLowSpdInfoMsgs().motor_5.foc_status.driver_enable_status
-            and piper.GetArmLowSpdInfoMsgs().motor_6.foc_status.driver_enable_status
-        )
         print("使能状态:", enable_flag)
         print("--------------------")
-        # 检查是否超过超时时间
+
+        time.sleep(0.01)
+        elapsed_time = time.time() - start_time
         if elapsed_time > timeout:
-            print("超时....")
-            elapsed_time_flag = True
-            enable_flag = True
+            print("Piper机械臂自动使能超时....")
             break
-        time.sleep(1)
-    if elapsed_time_flag:
-        print("程序自动使能超时,退出程序")
-        raise ConnectionError("程序自动使能超时,退出程序")
 
 
 def main():
@@ -51,49 +38,40 @@ def main():
     piper = C_PiperInterface(can_bus)
     piper.ConnectPort()
 
-    if not TEACH_MODE:
-        # piper.MotionCtrl_3(0, 0, 0, 0x00)#位置速度模式
-        piper.EnableArm(7)
-        enable_fun(piper=piper)
-        piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-        piper.JointCtrl(0, 0, 0, 0, 0, 0)
-        piper.GripperCtrl(abs(0), 1000, 0x01, 0)
-        piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-        time.sleep(5)
-
     factor = 57324.840764  # 1000*180/3.14
     node = Node()
 
     for event in node:
         if event["type"] == "INPUT":
-            if event["id"] == "joint_action":
-                if TEACH_MODE:
-                    continue
-                # Do not push to many commands to fast. Limiting it to 20Hz
-                if time.time() - elapsed_time > 0.05:
+            if event["id"] == "action_joint":
+                # print(f" get action_joint")
+                enable_fun(piper)
+
+                # Do not push to many commands to fast. Limiting it to 30Hz
+                if time.time() - elapsed_time > 0.03:
                     elapsed_time = time.time()
                 else:
                     continue
 
                 position = event["value"].to_numpy()
+
+                # print(f"action_joint: {position}")
                 joint_0 = round(position[0] * factor)
                 joint_1 = round(position[1] * factor)
                 joint_2 = round(position[2] * factor)
                 joint_3 = round(position[3] * factor)
                 joint_4 = round(position[4] * factor)
                 joint_5 = round(position[5] * factor)
-                joint_6 = round(position[6] * 1000 * 100)
 
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
                 piper.JointCtrl(joint_0, joint_1, joint_2, joint_3, joint_4, joint_5)
-                piper.GripperCtrl(abs(joint_6), 1000, 0x01, 0)
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
 
-            elif event["id"] == "eef_action":
-                if TEACH_MODE:
-                    continue
-                # Do not push to many commands to fast. Limiting it to 20Hz
-                if time.time() - elapsed_time > 0.05:
+            elif event["id"] == "action_endpose":
+                enable_fun(piper)
+
+                # Do not push to many commands to fast. Limiting it to 30Hz
+                if time.time() - elapsed_time > 0.03:
                     elapsed_time = time.time()
                 else:
                     continue
@@ -108,7 +86,21 @@ def main():
                     position[4] * 1000 / (2 * np.pi) * 360,
                     position[5] * 1000 / (2 * np.pi) * 360,
                 )
-                piper.GripperCtrl(abs(position[6] * 1000 * 100), 1000, 0x01, 0)
+                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+            
+            elif event["id"] == "action_gripper":
+                # print(f" get action_gripper")
+                enable_fun(piper)
+
+                # Do not push to many commands to fast. Limiting it to 30Hz
+                if time.time() - elapsed_time > 0.03:
+                    elapsed_time = time.time()
+                else:
+                    continue
+
+                position = event["value"].to_numpy()
+                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                piper.GripperCtrl(int(abs(position[0] * 1000 * 100)), 1000, 0x01, 0)
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
 
             else:
@@ -181,12 +173,12 @@ def main():
                 )
 
         elif event["type"] == "STOP":
-            if not TEACH_MODE:
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-                piper.JointCtrl(0, 0, 0, 0, 0, 0)
-                piper.GripperCtrl(abs(0), 1000, 0x01, 0)
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-            time.sleep(5)
+            # if not TEACH_MODE:
+            #     piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+            #     piper.JointCtrl(0, 0, 0, 0, 0, 0)
+            #     piper.GripperCtrl(abs(0), 1000, 0x01, 0)
+            #     piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+            # time.sleep(5)
             break
 
 

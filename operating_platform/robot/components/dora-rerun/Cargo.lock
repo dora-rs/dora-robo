@@ -1906,7 +1906,7 @@ dependencies = [
 
 [[package]]
 name = "dora-rerun"
-version = "0.1.0"
+version = "0.3.12"
 dependencies = [
  "bytemuck",
  "dora-node-api",
@@ -1916,6 +1916,7 @@ dependencies = [
  "pinyin",
  "pyo3",
  "rand 0.9.2",
+ "re_web_viewer_server",
  "rerun",
  "tokio",
 ]

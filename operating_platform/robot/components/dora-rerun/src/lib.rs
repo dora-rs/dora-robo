@@ -17,6 +17,8 @@ use pinyin::ToPinyin;
 use rerun::{
     ImageFormat, Points2D, Points3D, SpawnOptions, components::ImageBuffer, external::log::warn,
 };
+use re_web_viewer_server::WebViewerServerPort;
+// use rerun::web_viewer::WebViewerServerPort;
 pub mod boxes2d;
 pub mod boxes3d;
 pub mod series;
@@ -37,6 +39,7 @@ pub fn lib_main() -> Result<()> {
     let mut mask_cache: HashMap<DataId, Vec<bool>> = HashMap::new();
     let mut color_cache: HashMap<DataId, rerun::Color> = HashMap::new();
     let mut options = SpawnOptions::default();
+    // let mut web_view_config = rerun::web_viewer::WebViewerConfig::default();
 
     let memory_limit = match std::env::var("RERUN_MEMORY_LIMIT") {
         Ok(memory_limit) => memory_limit
@@ -54,6 +57,22 @@ pub fn lib_main() -> Result<()> {
         Ok("SPAWN") => rerun::RecordingStreamBuilder::new("dora-rerun")
             .spawn_opts(&options, None)
             .context("Could not spawn rerun visualization")?,
+        Ok("GRPC") => {
+            let web_view_config = rerun::web_viewer::WebViewerConfig {
+                bind_ip: "127.0.0.1".to_string(),
+                web_port: WebViewerServerPort(9060),
+                connect_to: Some("rerun+http://localhost:9876/proxy".to_string()),
+                force_wgpu_backend: None,
+                video_decoder: None,
+                open_browser: false,
+            };
+            let web_view_server = rerun::web_viewer::serve_web_viewer(web_view_config)?;
+            web_view_server.detach();
+
+            rerun::RecordingStreamBuilder::new("dora-rerun")
+                .serve_grpc_opts("0.0.0.0", 9876, rerun::MemoryLimit{max_bytes: Some(4*1024*1024*1024)})
+                .context("Could not start rerun visualization with gRPC")?
+        }
         Ok("CONNECT") => {
             let opt = std::env::var("RERUN_SERVER_ADDR").unwrap_or("127.0.0.1:9876".to_string());
 
