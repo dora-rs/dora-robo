@@ -44,6 +44,7 @@ def main():
     for event in node:
         if event["type"] == "INPUT":
             if event["id"] == "action_joint":
+                # print(f" get action_joint")
                 enable_fun(piper)
 
                 # Do not push to many commands to fast. Limiting it to 30Hz
@@ -53,6 +54,8 @@ def main():
                     continue
 
                 position = event["value"].to_numpy()
+
+                # print(f"action_joint: {position}")
                 joint_0 = round(position[0] * factor)
                 joint_1 = round(position[1] * factor)
                 joint_2 = round(position[2] * factor)
@@ -86,6 +89,7 @@ def main():
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
             
             elif event["id"] == "action_gripper":
+                # print(f" get action_gripper")
                 enable_fun(piper)
 
                 # Do not push to many commands to fast. Limiting it to 30Hz
@@ -96,7 +100,7 @@ def main():
 
                 position = event["value"].to_numpy()
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-                piper.GripperCtrl(abs(position[0] * 1000 * 100), 1000, 0x01, 0)
+                piper.GripperCtrl(int(abs(position[0] * 1000 * 100)), 1000, 0x01, 0)
                 piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
 
             else:

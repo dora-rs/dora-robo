@@ -35,8 +35,8 @@ from operating_platform.core.record import Record, RecordConfig
 from operating_platform.core.replay import DatasetReplayConfig, ReplayConfig, replay
 
 DEFAULT_FPS = 30
-RERUN_WEB_PORT = 9095
-RERUN_WS_PORT = 9185
+RERUN_WEB_PORT = 9195
+RERUN_WS_PORT = 9285
 
 @cache
 def is_headless():

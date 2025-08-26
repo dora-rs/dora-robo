@@ -391,6 +391,7 @@ def create_empty_dataset_info(
         "fps": fps,
         "splits": {},
         "data_path": DEFAULT_PARQUET_PATH,
+        "image_path": DEFAULT_IMAGE_PATH if use_videos == False else None,
         "video_path": DEFAULT_VIDEO_PATH if use_videos else None,
         "audio_path": DEFAULT_AUDIO_PATH if use_audios else None,
         "features": features,
