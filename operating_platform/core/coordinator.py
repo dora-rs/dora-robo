@@ -435,6 +435,9 @@ class Coordinator:
                     pass
                     
             self.replaying = False
+            print("="*20)
+            print("Replay Complete Success!")
+            print("="*20)
     
 ####################### Client Send to Server ############################
     def send_heartbeat(self):
