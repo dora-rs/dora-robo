@@ -171,6 +171,7 @@ def main(cfg: ControlPipelineConfig):
 
     finally:
         record.stop()
+        record.save()
         daemon.stop()
         # coordinator.stop()
         cv2.destroyAllWindows()
