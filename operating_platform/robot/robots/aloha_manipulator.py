@@ -37,7 +37,9 @@ socket = context.socket(zmq.PAIR)
 socket.connect(ipc_address)
 socket.setsockopt(zmq.SNDHWM, 2000)
 socket.setsockopt(zmq.SNDBUF, 2**25)
-socket.setsockopt(zmq.RCVTIMEO, 300)  # 设置接收超时（毫秒）
+socket.setsockopt(zmq.SNDTIMEO, 2000)
+socket.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket.setsockopt(zmq.LINGER, 0)
 
 running_server = True
 recv_images = {}  # 缓存每个 event_id 的最新帧

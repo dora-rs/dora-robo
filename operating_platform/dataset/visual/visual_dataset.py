@@ -169,6 +169,9 @@ def visualize_dataset(
                         if not Path(img_path).exists():
                             raise FileNotFoundError(f"Image path does not exist: {img_path}")
                         img = cv2.imread(img_path)
+
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        
                         rr.log(key, rr.Image(img))
 
                 # display each dimension of action space (e.g. actuators command)
@@ -209,7 +212,7 @@ def visualize_dataset(
                     if stop_event is None:
                         print("stop_event should been set")
                         raise ValueError(stop_event)
-                    while stop_event.is_set() is False:
+                    while stop_event.is_set() == False:
                         time.sleep(0.05)
                 except KeyboardInterrupt:
                     print("\nCtrl-C received. Exiting.")

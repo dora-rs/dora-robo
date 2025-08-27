@@ -16,7 +16,10 @@ socket = context.socket(zmq.PAIR)
 socket.bind(ipc_address)
 socket.setsockopt(zmq.SNDHWM, 2000)
 socket.setsockopt(zmq.SNDBUF, 2**25)
-socket.setsockopt(zmq.RCVTIMEO, 300)
+socket.setsockopt(zmq.SNDTIMEO, 2000)
+socket.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket.setsockopt(zmq.LINGER, 0)
+
 running_server = True
 
 # 创建线程安全队列 (在全局作用域)
