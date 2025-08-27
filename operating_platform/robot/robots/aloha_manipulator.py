@@ -6,6 +6,7 @@ import os
 import ctypes
 import platform
 import sys
+import zmq
 
 import numpy as np
 import torch
@@ -17,8 +18,6 @@ from typing import Any
 
 import threading
 import cv2
-
-import zmq
 
 
 from operating_platform.robot.robots.utils import RobotDeviceNotConnectedError
