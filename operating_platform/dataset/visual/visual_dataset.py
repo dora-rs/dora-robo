@@ -210,7 +210,7 @@ def visualize_dataset(
                         print("stop_event should been set")
                         raise ValueError(stop_event)
                     while stop_event.is_set() is False:
-                        time.sleep(1)
+                        time.sleep(0.05)
                 except KeyboardInterrupt:
                     print("\nCtrl-C received. Exiting.")
 
