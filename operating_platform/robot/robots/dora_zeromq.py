@@ -71,7 +71,7 @@ output_queue = queue.Queue()
 def recv_server():
     while running_server:
         try:
-            message_parts = socket.recv_multipart(flags=zmq.NOBLOCK)
+            message_parts = socket.recv_multipart()
             if message_parts and len(message_parts) >= 2:
                 event_id = message_parts[0].decode('utf-8')
                 buffer_bytes = message_parts[1]

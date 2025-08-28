@@ -5,11 +5,11 @@ nodes:
       tick: dora/timer/millis/33
     outputs:
       - master-endpose
-      - master-jointstate
-      - master-gripper
+      # - master-jointstate
+      # - master-gripper
       - slave-endpose
       - slave-jointstate
-      - slave-gripper
+      # - slave-gripper
     env:
       CAN_BUS: can_right
 
@@ -19,11 +19,11 @@ nodes:
       tick: dora/timer/millis/33
     outputs:
       - master-endpose
-      - master-jointstate
-      - master-gripper
+      # - master-jointstate
+      # - master-gripper
       - slave-endpose
       - slave-jointstate
-      - slave-gripper
+      # - slave-gripper
     env:
       CAN_BUS: can_left
 

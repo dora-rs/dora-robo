@@ -58,10 +58,9 @@ def zmq_send(event_id, buffer):
         socket.send_multipart([
             event_id.encode('utf-8'),
             buffer_bytes
-        ], flags=zmq.NOBLOCK)
+        ], flags=zmq.BLOCK)
     except zmq.Again:
         pass
-    time.sleep(0.01)
 
 
 def recv_server():
@@ -93,6 +92,7 @@ def recv_server():
                     with lock:
                         # print(f"Received event_id = {event_id}")
                         recv_master_jointstats[event_id] = joint_array
+                        recv_master_gripper = joint_array[6]
 
             # if 'endpose' in event_id and 'master' in event_id:
             #     pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -101,12 +101,12 @@ def recv_server():
             #             # print(f"Received event_id = {event_id}")
             #             recv_master_pose[event_id] = pose_array
 
-            if 'gripper' in event_id and 'master' in event_id:
-                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if gripper_array is not None:
-                    with lock:
-                        # print(f"Received event_id = {event_id}")
-                        recv_master_gripper[event_id] = gripper_array
+            # if 'gripper' in event_id and 'master' in event_id:
+            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+            #     if gripper_array is not None:
+            #         with lock:
+            #             # print(f"Received event_id = {event_id}")
+            #             recv_master_gripper[event_id] = gripper_array
 
             if 'jointstat' in event_id and 'follower' in event_id:
                 joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -115,6 +115,7 @@ def recv_server():
                         # print(f"Received event_id = {event_id}")
                         # print(f"Received joint_array = {joint_array}")
                         recv_follower_jointstats[event_id] = joint_array
+                        recv_follower_gripper = joint_array[6]
 
             if 'endpose' in event_id and 'follower' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -122,11 +123,11 @@ def recv_server():
                     with lock:
                         recv_follower_pose[event_id] = pose_array
 
-            if 'gripper' in event_id and 'follower' in event_id:
-                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if gripper_array is not None:
-                    with lock:
-                        recv_follower_gripper[event_id] = gripper_array
+            # if 'gripper' in event_id and 'follower' in event_id:
+            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+            #     if gripper_array is not None:
+            #         with lock:
+            #             recv_follower_gripper[event_id] = gripper_array
 
 
         except zmq.Again:
@@ -285,20 +286,20 @@ class AlohaManipulator:
             # 可选：减少CPU占用
             time.sleep(0.01)
 
-        start_time = time.perf_counter()
-        while True:
-            if any(
-                any(name in key for key in recv_follower_gripper)
-                for name in self.follower_arms
-            ):
-                break
+        # start_time = time.perf_counter()
+        # while True:
+        #     if any(
+        #         any(name in key for key in recv_follower_gripper)
+        #         for name in self.follower_arms
+        #     ):
+        #         break
 
-            # 超时检测
-            if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("等待机械臂夹爪超时")
+        #     # 超时检测
+        #     if time.perf_counter() - start_time > timeout:
+        #         raise TimeoutError("等待机械臂夹爪超时")
 
-            # 可选：减少CPU占用
-            time.sleep(0.01)
+        #     # 可选：减少CPU占用
+        #     time.sleep(0.01)
 
         self.is_connected = True
     
