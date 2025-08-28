@@ -83,15 +83,18 @@ def recv_server():
                 # ✅ 仅将数据放入队列，不再操作 node
                 if 'action_joint_right' in event_id:
                     output_queue.put(("action_joint_right", array))
-                elif 'action_joint_left' in event_id:
+                if 'action_joint_left' in event_id:
                     output_queue.put(("action_joint_left", array))
-                elif 'action_gripper_right' in event_id:
+                if 'action_gripper_right' in event_id:
                     output_queue.put(("action_gripper_right", array))
-                elif 'action_gripper_left' in event_id:
+                if 'action_gripper_left' in event_id:
                     output_queue.put(("action_gripper_left", array))
                     
         except zmq.Again:
+            print(f"Dora ZeroMQ Received Timeout")
             time.sleep(0.01)
+            continue
+            
         except Exception as e:
             print("recv error:", e)
             break

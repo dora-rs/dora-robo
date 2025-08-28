@@ -51,16 +51,17 @@ recv_follower_pose = {}
 lock = threading.Lock()  # 线程锁
 
 
-def zmq_send(event_id, buffer):
+def zmq_send(event_id, buffer, wait_time_s):
     buffer_bytes = buffer.tobytes()
     print(f"zmq send event_id:{event_id}, value:{buffer}")
     try:
         socket.send_multipart([
             event_id.encode('utf-8'),
             buffer_bytes
-        ], flags=zmq.BLOCK)
+        ], flags=zmq.NOBLOCK)
     except zmq.Again:
         pass
+    time.sleep(wait_time_s)
 
 
 def recv_server():
@@ -134,7 +135,7 @@ def recv_server():
 
         except zmq.Again:
             # 接收超时，继续循环
-            print(f"Received Timeout")
+            print(f"Manipulator Received Timeout")
             continue
         except Exception as e:
             print("recv error:", e)
@@ -359,7 +360,7 @@ class AlohaManipulator:
                     byte_array = np.zeros(1, dtype=np.float32)
                     gripper_read = recv_follower_jointstats[match_name][6]
 
-                    byte_array[:1] = gripper_read[:]
+                    byte_array[0] = gripper_read
                     byte_array = np.round(byte_array, 3)
                     
                     follower_gripper[name] = torch.from_numpy(byte_array)
@@ -410,7 +411,7 @@ class AlohaManipulator:
                     byte_array = np.zeros(1, dtype=np.float32)
                     gripper_read = recv_master_jointstats[match_name][6]
 
-                    byte_array[:1] = gripper_read[:]
+                    byte_array[0] = gripper_read
                     byte_array = np.round(byte_array, 3)
                     
                     master_gripper[name] = torch.from_numpy(byte_array)
@@ -608,8 +609,8 @@ class AlohaManipulator:
             goal_joint_numpy = np.array([t.item() for t in goal_joint], dtype=np.float32)
             goal_gripper_numpy = np.array([t.item() for t in goal_gripper], dtype=np.float32)
 
-            zmq_send(f"action_joint_{name}", goal_joint_numpy)
-            zmq_send(f"action_gripper_{name}", goal_gripper_numpy)
+            zmq_send(f"action_joint_{name}", goal_joint_numpy, wait_time_s=0.01)
+            zmq_send(f"action_gripper_{name}", goal_gripper_numpy, wait_time_s=0.01)
 
             # action_sent.append(goal_joint)
 
