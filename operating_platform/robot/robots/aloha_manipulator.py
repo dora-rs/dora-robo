@@ -44,10 +44,10 @@ running_server = True
 recv_images = {}  # 缓存每个 event_id 的最新帧
 recv_master_jointstats = {}
 # recv_master_pose = {}
-recv_master_gripper = {}
+# recv_master_gripper = {}
 recv_follower_jointstats = {}
 recv_follower_pose = {}
-recv_follower_gripper = {}
+# recv_follower_gripper = {}
 lock = threading.Lock()  # 线程锁
 
 
@@ -92,7 +92,8 @@ def recv_server():
                     with lock:
                         # print(f"Received event_id = {event_id}")
                         recv_master_jointstats[event_id] = joint_array
-                        recv_master_gripper = joint_array[6]
+                    # with lock:
+                    #     recv_master_gripper[event_id] = joint_array[6]
 
             # if 'endpose' in event_id and 'master' in event_id:
             #     pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -115,7 +116,8 @@ def recv_server():
                         # print(f"Received event_id = {event_id}")
                         # print(f"Received joint_array = {joint_array}")
                         recv_follower_jointstats[event_id] = joint_array
-                        recv_follower_gripper = joint_array[6]
+                    # with lock:
+                    #     recv_follower_gripper = joint_array[6]
 
             if 'endpose' in event_id and 'follower' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -350,12 +352,12 @@ class AlohaManipulator:
 
         follower_gripper = {}
         for name in self.follower_arms:
-            for match_name in recv_follower_gripper:
+            for match_name in recv_follower_jointstats:
                 if name in match_name:
                     now = time.perf_counter()
 
                     byte_array = np.zeros(1, dtype=np.float32)
-                    gripper_read = recv_follower_gripper[match_name]
+                    gripper_read = recv_follower_jointstats[match_name][6]
 
                     byte_array[:1] = gripper_read[:]
                     byte_array = np.round(byte_array, 3)
@@ -401,12 +403,12 @@ class AlohaManipulator:
 
         master_gripper = {}
         for name in self.follower_arms:
-            for match_name in recv_master_gripper:
+            for match_name in recv_master_jointstats:
                 if name in match_name:
                     now = time.perf_counter()
 
                     byte_array = np.zeros(1, dtype=np.float32)
-                    gripper_read = recv_master_gripper[match_name]
+                    gripper_read = recv_master_jointstats[match_name][6]
 
                     byte_array[:1] = gripper_read[:]
                     byte_array = np.round(byte_array, 3)
