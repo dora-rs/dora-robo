@@ -11,8 +11,8 @@ from piper_sdk import C_PiperInterface
 
 def enable_fun(piper: C_PiperInterface):
     """使能机械臂并检测使能状态,尝试0.05s,如果使能超时则退出程序."""
-    enable_flag = False
-
+    enable_flag = all(piper.GetArmEnableStatus())
+    
     timeout = 0.05  # 超时时间（秒）
     interval = 0.01  # 每次轮询间隔（秒）
     
@@ -37,15 +37,18 @@ def main():
     can_bus = os.getenv("CAN_BUS", "")
     piper = C_PiperInterface(can_bus)
     piper.ConnectPort()
+    enable_fun(piper)
+    # piper.GripperCtrl(0, 3000, 0x01, 0)
 
     factor = 57324.840764  # 1000*180/3.14
     node = Node()
 
     for event in node:
         if event["type"] == "INPUT":
+            if "action" in event["id"]:
+                enable_fun(piper)
             if event["id"] == "action_joint":
                 # print(f" get action_joint")
-                enable_fun(piper)
 
                 # Do not push to many commands to fast. Limiting it to 30Hz
                 if time.time() - elapsed_time > 0.03:
@@ -63,13 +66,12 @@ def main():
                 joint_4 = round(position[4] * factor)
                 joint_5 = round(position[5] * factor)
 
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                piper.MotionCtrl_2(0x01, 0x01, 100, 0x00)
                 piper.JointCtrl(joint_0, joint_1, joint_2, joint_3, joint_4, joint_5)
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                # piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
 
             elif event["id"] == "action_endpose":
-                enable_fun(piper)
-
+                
                 # Do not push to many commands to fast. Limiting it to 30Hz
                 if time.time() - elapsed_time > 0.03:
                     elapsed_time = time.time()
@@ -77,7 +79,7 @@ def main():
                     continue
 
                 position = event["value"].to_numpy()
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                piper.MotionCtrl_2(0x01, 0x01, 100, 0x00)
                 piper.EndPoseCtrl(
                     position[0] * 1000 * 1000,
                     position[1] * 1000 * 1000,
@@ -86,11 +88,10 @@ def main():
                     position[4] * 1000 / (2 * np.pi) * 360,
                     position[5] * 1000 / (2 * np.pi) * 360,
                 )
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                # piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
             
             elif event["id"] == "action_gripper":
                 # print(f" get action_gripper")
-                enable_fun(piper)
 
                 # Do not push to many commands to fast. Limiting it to 30Hz
                 if time.time() - elapsed_time > 0.03:
@@ -99,11 +100,11 @@ def main():
                     continue
 
                 position = event["value"].to_numpy()
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
-                piper.GripperCtrl(int(abs(position[0] * 1000 * 100)), 1000, 0x01, 0)
-                piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
+                piper.MotionCtrl_2(0x01, 0x01, 100, 0x00)
+                piper.GripperCtrl(int(abs(position[0] * 1000 * 100)), 3000, 0x01, 0)
+                # piper.MotionCtrl_2(0x01, 0x01, 50, 0x00)
 
-            else:
+            elif event["id"] == "tick":
                 # Slave Arm
                 joint = piper.GetArmJointMsgs()
 
@@ -130,13 +131,13 @@ def main():
                 position_value += [position.end_pose.RZ_axis * 0.001 / 360 * 2 * np.pi]
 
                 node.send_output("slave_endpose", pa.array(position_value, type=pa.float32()))
-                node.send_output(
-                    "slave_gripper",
-                    pa.array(
-                        [gripper.gripper_state.grippers_angle / 1000 / 100],
-                        type=pa.float32(),
-                    ),
-                )
+                # node.send_output(
+                #     "slave_gripper",
+                #     pa.array(
+                #         [gripper.gripper_state.grippers_angle / 1000 / 100],
+                #         type=pa.float32(),
+                #     ),
+                # )
 
                 # Master Arm
                 joint = piper.GetArmJointCtrl()
@@ -164,13 +165,15 @@ def main():
                 # position_value += [position[5][5] / 360 * 2 * np.pi]
 
                 # node.send_output("master_endpose", pa.array(position_value, type=pa.float32()))
-                node.send_output(
-                    "master_gripper",
-                    pa.array(
-                        [gripper.gripper_ctrl.grippers_angle / 1000 / 100],
-                        type=pa.float32(),
-                    ),
-                )
+
+
+                # node.send_output(
+                #     "master_gripper",
+                #     pa.array(
+                #         [gripper.gripper_ctrl.grippers_angle / 1000 / 100],
+                #         type=pa.float32(),
+                #     ),
+                # )
 
         elif event["type"] == "STOP":
             # if not TEACH_MODE:

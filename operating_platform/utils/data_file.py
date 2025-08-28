@@ -82,7 +82,7 @@ def file_size(path, n):
                     break
                 # 如果没找到文件，递归检查子目录
                 if not found:
-                    file_size_bytes += get_directory_size(subdir_path)
+                    file_size_bytes += get_directory_size(file_path)
                 break
                 
         return file_size_bytes

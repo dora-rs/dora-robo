@@ -421,7 +421,7 @@ class Coordinator:
                 # 无论可视化是否正常结束，都通知replay线程停止
                 stop_event.set()
                 # 等待replay线程安全退出（设置合理超时）
-                visual_thread.join(timeout=2.0)
+                visual_thread.join(timeout=5.0)
                 
                 # 检查线程是否已退出
                 if visual_thread.is_alive():
@@ -435,6 +435,9 @@ class Coordinator:
                     pass
                     
             self.replaying = False
+            print("="*20)
+            print("Replay Complete Success!")
+            print("="*20)
     
 ####################### Client Send to Server ############################
     def send_heartbeat(self):

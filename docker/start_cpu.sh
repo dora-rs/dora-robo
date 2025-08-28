@@ -24,7 +24,7 @@ docker run -it \
   -e http_proxy=http://127.0.0.1:7897 \
   -e https_proxy=http://127.0.0.1:7897 \
   -e DOROBOT_HOME=/root/DoRobot \
-  operating-platform:V1.8_ubuntu20
+  operating-platform:V1.9_ubuntu20
 
 # 3. 检查容器是否运行
 if [ "$(docker inspect -f '{{.State.Running}}' operating_platform 2>/dev/null)" == "true" ]; then

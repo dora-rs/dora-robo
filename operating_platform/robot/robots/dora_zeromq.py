@@ -16,7 +16,10 @@ socket = context.socket(zmq.PAIR)
 socket.bind(ipc_address)
 socket.setsockopt(zmq.SNDHWM, 2000)
 socket.setsockopt(zmq.SNDBUF, 2**25)
-socket.setsockopt(zmq.RCVTIMEO, 300)
+socket.setsockopt(zmq.SNDTIMEO, 2000)
+socket.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket.setsockopt(zmq.LINGER, 0)
+
 running_server = True
 
 # 创建线程安全队列 (在全局作用域)
@@ -68,7 +71,7 @@ output_queue = queue.Queue()
 def recv_server():
     while running_server:
         try:
-            message_parts = socket.recv_multipart(flags=zmq.NOBLOCK)
+            message_parts = socket.recv_multipart()
             if message_parts and len(message_parts) >= 2:
                 event_id = message_parts[0].decode('utf-8')
                 buffer_bytes = message_parts[1]
@@ -80,15 +83,18 @@ def recv_server():
                 # ✅ 仅将数据放入队列，不再操作 node
                 if 'action_joint_right' in event_id:
                     output_queue.put(("action_joint_right", array))
-                elif 'action_joint_left' in event_id:
+                if 'action_joint_left' in event_id:
                     output_queue.put(("action_joint_left", array))
-                elif 'action_gripper_right' in event_id:
+                if 'action_gripper_right' in event_id:
                     output_queue.put(("action_gripper_right", array))
-                elif 'action_gripper_left' in event_id:
+                if 'action_gripper_left' in event_id:
                     output_queue.put(("action_gripper_left", array))
                     
         except zmq.Again:
+            print(f"Dora ZeroMQ Received Timeout")
             time.sleep(0.01)
+            continue
+            
         except Exception as e:
             print("recv error:", e)
             break
