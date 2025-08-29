@@ -69,7 +69,7 @@ from operating_platform.utils.video import (
 )
 from operating_platform.robot.robots.utils import Robot
 
-
+LEROBOT_DATASET_VERSION = "v2.1"
 DOROBOT_DATASET_VERSION = "v1.0"
 
 
@@ -395,7 +395,7 @@ class DoRobotDatasetMetadata:
 
         obj.tasks, obj.task_to_task_index = {}, {}
         obj.episodes_stats, obj.stats, obj.episodes = {}, {}, {}
-        obj.info = create_empty_dataset_info(DOROBOT_DATASET_VERSION, DOROBOT_DATASET_VERSION, fps, robot_type, features, use_videos, use_audios)
+        obj.info = create_empty_dataset_info(LEROBOT_DATASET_VERSION, DOROBOT_DATASET_VERSION, fps, robot_type, features, use_videos, use_audios)
         if len(obj.video_keys) > 0 and not use_videos:
             raise ValueError()
         write_json(obj.info, obj.root / INFO_PATH)

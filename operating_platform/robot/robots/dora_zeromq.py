@@ -10,68 +10,37 @@ node = Node()
 
 # IPC Address
 ipc_address = "ipc:///tmp/dora-zeromq"
+ipc_address_piper = "ipc:///tmp/dorobot-piper"
 
 context = zmq.Context()
-socket = context.socket(zmq.PAIR)
-socket.bind(ipc_address)
-socket.setsockopt(zmq.SNDHWM, 2000)
-socket.setsockopt(zmq.SNDBUF, 2**25)
-socket.setsockopt(zmq.SNDTIMEO, 2000)
-socket.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
-socket.setsockopt(zmq.LINGER, 0)
+running_recv_image_server = True
+running_recv_piper_server = True
+
+socket_image = context.socket(zmq.PAIR)
+socket_image.bind(ipc_address)
+socket_image.setsockopt(zmq.SNDHWM, 2000)
+socket_image.setsockopt(zmq.SNDBUF, 2**25)
+socket_image.setsockopt(zmq.SNDTIMEO, 2000)
+socket_image.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket_image.setsockopt(zmq.LINGER, 0)
+
+socket_piper = context.socket(zmq.PAIR)
+socket_piper.bind(ipc_address_piper)
+socket_piper.setsockopt(zmq.SNDHWM, 2000)
+socket_piper.setsockopt(zmq.SNDBUF, 2**25)
+socket_piper.setsockopt(zmq.SNDTIMEO, 2000)
+socket_piper.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket_piper.setsockopt(zmq.LINGER, 0)
 
 running_server = True
 
 # 创建线程安全队列 (在全局作用域)
 output_queue = queue.Queue()
 
-
-# def recv_server():
-#     while running_server:
-#         try:
-#             # 接收 multipart 消息
-#             message_parts = socket.recv_multipart(flags=zmq.NOBLOCK)
-#             if message_parts:
-#                 if len(message_parts) < 2:
-#                     continue  # 协议错误
-
-#                 event_id = message_parts[0].decode('utf-8')
-#                 buffer_bytes = message_parts[1]
-
-#                 print(f"zmq recv event_id:{event_id}")
-
-#                 array = np.frombuffer(buffer_bytes, dtype=np.float32).copy()
-
-#                 print(f"zmq recv array:{array}")
-
-#                 if 'action_joint_right' in event_id:
-#                     # joint_array = np.frombuffer(buffer_bytes, dtype=np.float32).copy()
-
-#                     node.send_output("action_joint_right", pa.array(array, type=pa.float32()))
-#                     print(f"send event_id : <{event_id}>  succese")
-#                 elif 'action_joint_left' in event_id:
-#                     # joint_array = np.frombuffer(buffer_bytes, dtype=np.float32).copy()
-#                     node.send_output("action_joint_left", pa.array(array, type=pa.float32()))
-#                     print(f"send event_id : <{event_id}>  succese")
-#                 elif 'action_gripper_right' in event_id:
-#                     # gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32).copy()
-#                     node.send_output("action_gripper_right", pa.array(array, type=pa.float32()))
-#                     print(f"send event_id : <{event_id}>  succese")
-#                 elif 'action_gripper_left' in event_id:
-#                     # gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32).copy()
-#                     node.send_output("action_gripper_left", pa.array(array, type=pa.float32()))
-#                     print(f"send event_id : <{event_id}>  succese")
-
-#         except zmq.Again:
-#             time.sleep(0.01)  # 避免忙等
-#         except Exception as e:
-#             print("recv error:", e)
-#             break
-
 def recv_server():
     while running_server:
         try:
-            message_parts = socket.recv_multipart()
+            message_parts = socket_piper.recv_multipart()
             if message_parts and len(message_parts) >= 2:
                 event_id = message_parts[0].decode('utf-8')
                 buffer_bytes = message_parts[1]
@@ -128,17 +97,22 @@ if __name__ == "__main__":
                 # print(f"Send event: {event_id}")
                 # print(f"Buffer size: {len(buffer_bytes)} bytes")
 
-                try:
-                    socket.send_multipart([
-                        event_id.encode('utf-8'),
-                        buffer_bytes
-                    ], flags=zmq.NOBLOCK)
-                except zmq.Again:
-                    # print("Socket would block, skipping send this frame...")
-                    # continue
-                    # continue
-                    pass
-                # time.sleep(0.001)
+                if "image" in event_id:
+                    try:
+                        socket_image.send_multipart([
+                            event_id.encode('utf-8'),
+                            buffer_bytes
+                        ], flags=zmq.NOBLOCK)
+                    except zmq.Again:
+                        pass
+                else:
+                    try:
+                        socket_piper.send_multipart([
+                            event_id.encode('utf-8'),
+                            buffer_bytes
+                        ], flags=zmq.NOBLOCK)
+                    except zmq.Again:
+                        pass
                 
             elif event["type"] == "STOP":
                 break
@@ -149,5 +123,7 @@ if __name__ == "__main__":
         server_thread.join()
 
         # Close zmq
-        socket.close()
+        socket_image.close()
+        socket_piper.close()
+
         context.term()

@@ -44,7 +44,7 @@ class ReplayConfig:
 @draccus.wrap()
 def replay(cfg: ReplayConfig):
     init_logging()
-    logging.info(pformat(asdict(cfg)))
+    # logging.info(pformat(asdict(cfg)))
 
     # robot = make_robot_from_config(cfg.robot)
     dataset = DoRobotDataset(cfg.dataset.repo_id, root=cfg.dataset.root, episodes=[cfg.dataset.episode])

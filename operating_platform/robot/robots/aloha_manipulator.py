@@ -27,35 +27,41 @@ from operating_platform.robot.robots.com_configs.cameras import CameraConfig, Op
 from operating_platform.robot.robots.camera import Camera
 
 
+recv_images = {}
+recv_master_jointstats = {}
+recv_follower_jointstats = {}
+recv_follower_pose = {}
+lock = threading.Lock()  # 线程锁
 
 # IPC Address
 ipc_address = "ipc:///tmp/dora-zeromq"
+ipc_address_piper = "ipc:///tmp/dorobot-piper"
 
 context = zmq.Context()
-socket = context.socket(zmq.PAIR)
-socket.connect(ipc_address)
-socket.setsockopt(zmq.SNDHWM, 2000)
-socket.setsockopt(zmq.SNDBUF, 2**25)
-socket.setsockopt(zmq.SNDTIMEO, 2000)
-socket.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
-socket.setsockopt(zmq.LINGER, 0)
+running_recv_image_server = True
+running_recv_piper_server = True
 
-running_server = True
-recv_images = {}  # 缓存每个 event_id 的最新帧
-recv_master_jointstats = {}
-# recv_master_pose = {}
-# recv_master_gripper = {}
-recv_follower_jointstats = {}
-recv_follower_pose = {}
-# recv_follower_gripper = {}
-lock = threading.Lock()  # 线程锁
+socket_image = context.socket(zmq.PAIR)
+socket_image.connect(ipc_address)
+socket_image.setsockopt(zmq.SNDHWM, 2000)
+socket_image.setsockopt(zmq.SNDBUF, 2**25)
+socket_image.setsockopt(zmq.SNDTIMEO, 2000)
+socket_image.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket_image.setsockopt(zmq.LINGER, 0)
 
+socket_piper = context.socket(zmq.PAIR)
+socket_piper.connect(ipc_address_piper)
+socket_piper.setsockopt(zmq.SNDHWM, 2000)
+socket_piper.setsockopt(zmq.SNDBUF, 2**25)
+socket_piper.setsockopt(zmq.SNDTIMEO, 2000)
+socket_piper.setsockopt(zmq.RCVTIMEO, 2000)  # 设置接收超时（毫秒）
+socket_piper.setsockopt(zmq.LINGER, 0)
 
-def zmq_send(event_id, buffer, wait_time_s):
+def piper_zmq_send(event_id, buffer, wait_time_s):
     buffer_bytes = buffer.tobytes()
     print(f"zmq send event_id:{event_id}, value:{buffer}")
     try:
-        socket.send_multipart([
+        socket_piper.send_multipart([
             event_id.encode('utf-8'),
             buffer_bytes
         ], flags=zmq.NOBLOCK)
@@ -63,13 +69,11 @@ def zmq_send(event_id, buffer, wait_time_s):
         pass
     time.sleep(wait_time_s)
 
-
-def recv_server():
+def recv_img_server():
     """接收数据线程"""
-    while running_server:
+    while running_recv_image_server:
         try:
-
-            message_parts = socket.recv_multipart()
+            message_parts = socket_image.recv_multipart()
             if len(message_parts) < 2:
                 continue  # 协议错误
 
@@ -84,41 +88,37 @@ def recv_server():
                 
                 if frame is not None:
                     with lock:
-                        # print(f"Received event_id = {event_id}")
                         recv_images[event_id] = frame
+
+        except zmq.Again:
+            print(f"Manipulator Receive Image Timeout")
+            continue
+        except Exception as e:
+            print("Manipulator Receive Image Recv Error:", e)
+            break
+
+def recv_piper_server():
+    """接收数据线程"""
+    while running_recv_piper_server:
+        try:
+            message_parts = socket_piper.recv_multipart()
+            if len(message_parts) < 2:
+                continue  # 协议错误
+
+            event_id = message_parts[0].decode('utf-8')
+            buffer_bytes = message_parts[1]
 
             if 'jointstat' in event_id and 'master' in event_id:
                 joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if joint_array is not None:
                     with lock:
-                        # print(f"Received event_id = {event_id}")
                         recv_master_jointstats[event_id] = joint_array
-                    # with lock:
-                    #     recv_master_gripper[event_id] = joint_array[6]
-
-            # if 'endpose' in event_id and 'master' in event_id:
-            #     pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-            #     if pose_array is not None:
-            #         with lock:
-            #             # print(f"Received event_id = {event_id}")
-            #             recv_master_pose[event_id] = pose_array
-
-            # if 'gripper' in event_id and 'master' in event_id:
-            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-            #     if gripper_array is not None:
-            #         with lock:
-            #             # print(f"Received event_id = {event_id}")
-            #             recv_master_gripper[event_id] = gripper_array
 
             if 'jointstat' in event_id and 'follower' in event_id:
                 joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
                 if joint_array is not None:
                     with lock:
-                        # print(f"Received event_id = {event_id}")
-                        # print(f"Received joint_array = {joint_array}")
                         recv_follower_jointstats[event_id] = joint_array
-                    # with lock:
-                    #     recv_follower_gripper = joint_array[6]
 
             if 'endpose' in event_id and 'follower' in event_id:
                 pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
@@ -126,19 +126,11 @@ def recv_server():
                     with lock:
                         recv_follower_pose[event_id] = pose_array
 
-            # if 'gripper' in event_id and 'follower' in event_id:
-            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-            #     if gripper_array is not None:
-            #         with lock:
-            #             recv_follower_gripper[event_id] = gripper_array
-
-
         except zmq.Again:
-            # 接收超时，继续循环
-            print(f"Manipulator Received Timeout")
+            print(f"Manipulator Receive Piper Timeout")
             continue
         except Exception as e:
-            print("recv error:", e)
+            print("Manipulator Receive Piper Recv Error:", e)
             break
 
 
@@ -201,8 +193,11 @@ class AlohaManipulator:
         self.cameras = make_cameras_from_configs(self.config.cameras)
         self.microphones = self.config.microphones
 
-        recv_thread = threading.Thread(target=recv_server, daemon=True)
-        recv_thread.start()
+        self.recv_img_thread = threading.Thread(target=recv_img_server, daemon=True)
+        self.recv_img_thread.start()
+
+        self.recv_piper_thread = threading.Thread(target=recv_piper_server, daemon=True)
+        self.recv_piper_thread.start()
         
         self.is_connected = False
         self.logs = {}
@@ -608,9 +603,10 @@ class AlohaManipulator:
             # arm_index += 1
             goal_joint_numpy = np.array([t.item() for t in goal_joint], dtype=np.float32)
             goal_gripper_numpy = np.array([t.item() for t in goal_gripper], dtype=np.float32)
+            position = np.concatenate([goal_joint_numpy, goal_gripper_numpy], axis=0)
 
-            zmq_send(f"action_joint_{name}", goal_joint_numpy, wait_time_s=0.01)
-            zmq_send(f"action_gripper_{name}", goal_gripper_numpy, wait_time_s=0.01)
+            piper_zmq_send(f"action_joint_{name}", position, wait_time_s=0.01)
+            # piper_zmq_send(f"action_gripper_{name}", goal_gripper_numpy, wait_time_s=0.01)
 
             # action_sent.append(goal_joint)
 
@@ -667,7 +663,20 @@ class AlohaManipulator:
         #     self.cameras[name].disconnect()
 
         self.is_connected = False
-        running_server = False
+        
+        global running_recv_image_server
+        global running_recv_piper_server
+
+        running_recv_image_server = False
+        running_recv_piper_server = False
+
+        self.recv_img_thread.join()
+        self.recv_piper_thread.join()
+
+        socket_image.close()
+        socket_piper.close()
+
+        context.term()
         
 
     def __del__(self):
