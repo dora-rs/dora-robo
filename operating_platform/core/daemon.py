@@ -165,3 +165,16 @@ class Daemon:
             if self.observation is None:
                 return None
             return self.observation.copy()
+
+
+def daemon():
+    robot_daemon = Daemon()
+
+    robot_daemon.start()
+
+
+def main():
+    daemon()
+
+if __name__ == "__main__":
+    main()
