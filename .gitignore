@@ -208,3 +208,5 @@ docker/*.tar*
 
 *.STL
 .pids
+
+.vscode
