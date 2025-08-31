@@ -273,7 +273,7 @@ def update_common_record_json(path, data):
     overwrite_data = {
         "task_id": str(data["task_id"]),
         "task_name": str(data["task_name"]),
-        "machine_id": str(data["machine_id"]),
+        # "machine_id": str(data["machine_id"]),
     }
     
     # 以追加模式打开文件（如果不存在则创建）

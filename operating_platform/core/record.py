@@ -104,10 +104,13 @@ class RecordConfig():
 class Record:
     def __init__(self, fps: int, robot: Robot, daemon: Daemon, record_cfg: RecordConfig, record_cmd):
         self.robot = robot
+        self.fps = fps
+
         self.daemon = daemon
         self.record_cfg = record_cfg
-        self.fps = fps
+        self.record_cfg.record_cmd = record_cmd
         self.record_cmd = record_cfg.record_cmd
+        
         self.last_record_episode_index = 0
         self.record_complete = False
         self.save_data = None

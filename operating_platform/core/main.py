@@ -76,6 +76,7 @@ def main(cfg: ControlPipelineConfig):
 
     daemon = Daemon(fps=DEFAULT_FPS)
     daemon.start(cfg.robot)
+    daemon.update()
 
 
     # coordinator = Coordinator(daemon)
@@ -139,7 +140,7 @@ def main(cfg: ControlPipelineConfig):
         ]
     }
 
-    record_cfg = RecordConfig(fps=cfg.record.fps, repo_id=repo_id, video=daemon.robot.use_videos, resume=resume, root=target_dir)
+    record_cfg = RecordConfig(fps=cfg.record.fps, repo_id=repo_id, single_task=cfg.record.single_task, video=daemon.robot.use_videos, resume=resume, root=target_dir)
     record = Record(fps=cfg.record.fps, robot=daemon.robot, daemon=daemon, record_cfg = record_cfg, record_cmd=msg)
             
     record.start()

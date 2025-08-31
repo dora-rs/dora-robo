@@ -19,47 +19,49 @@ import cv2
 
 import zmq
 
-
 from operating_platform.robot.robots.utils import RobotDeviceNotConnectedError
-from operating_platform.robot.robots.configs import AlohaRobotConfig
+from operating_platform.robot.robots.configs import SO101RobotConfig
 from operating_platform.robot.robots.com_configs.cameras import CameraConfig, OpenCVCameraConfig
 
 from operating_platform.robot.robots.camera import Camera
 from operating_platform.robot.robots.pika_v1.pika_trans_visual_dual import Transformer
 
 
-# IPC Address
-pika_ipc_address = "ipc:///tmp/dr-robot-pika-v1"
-vive_ipc_address = "ipc:///tmp/dr-component-vive"
-gripper_ipc_address = "ipc:///tmp/dr-component-pika-gripper"
-
+ipc_address_image = "ipc:///tmp/dora-zeromq-so101-image"
+ipc_address_joint = "ipc:///tmp/dora-zeromq-so101-joint"
 
 recv_images = {}
-recv_pose = {}
-recv_rotation = {}
-recv_gripper = {}
+recv_joint = {}
 lock = threading.Lock()  # 线程锁
+
+running_recv_image_server = True
+running_recv_joint_server = True
+
 zmq_context = zmq.Context()
 
-pika_socket = zmq_context.socket(zmq.PAIR)
-pika_socket.bind(pika_ipc_address)
-pika_socket.setsockopt(zmq.RCVTIMEO, 300)
-pika_running_server = True
+socket_image = zmq_context.socket(zmq.PAIR)
+socket_image.connect(ipc_address_image)
+socket_image.setsockopt(zmq.RCVTIMEO, 2000)
 
-def pika_recv_server():
+socket_joint = zmq_context.socket(zmq.PAIR)
+socket_joint.connect(ipc_address_joint)
+socket_joint.setsockopt(zmq.RCVTIMEO, 2000)
+
+def recv_image_server():
     """接收数据线程"""
-    while pika_running_server:
+    while running_recv_image_server:
         try:
-
-            message_parts = pika_socket.recv_multipart()
+            message_parts = socket_image.recv_multipart()
             if len(message_parts) < 2:
                 continue  # 协议错误
 
             event_id = message_parts[0].decode('utf-8')
             buffer_bytes = message_parts[1]
             metadata = json.loads(message_parts[2].decode('utf-8'))
-            
 
+            # print(f"Received event_id = {event_id}")
+            # print(f"len(message_parts) = {len(message_parts)}")
+            
             if 'image' in event_id:
                 # 解码图像
                 img_array = np.frombuffer(buffer_bytes, dtype=np.uint8)
@@ -89,93 +91,40 @@ def pika_recv_server():
                         # print(f"Received event_id = {event_id}")
                         recv_images[event_id] = frame
 
-            # if 'gripper' in event_id:
-            #     gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-            #     if gripper_array is not None:
-            #         with lock:
-            #             recv_gripper[event_id] = gripper_array
-
-
         except zmq.Again:
-            print(f"Pika Received Timeout")
+            print(f"SO101 Image Received Timeout")
             continue
         except Exception as e:
-            print("recv error:", e)
+            print("recv image error:", e)
             break
 
-vive_socket = zmq_context.socket(zmq.PAIR)
-vive_socket.bind(vive_ipc_address)
-vive_socket.setsockopt(zmq.RCVTIMEO, 300)
-vive_running_server = True
 
-def vive_recv_server():
+def recv_joint_server():
     """接收数据线程"""
-    while vive_running_server:
+    while running_recv_joint_server:
         try:
-
-            message_parts = vive_socket.recv_multipart()
+            message_parts = socket_joint.recv_multipart()
             if len(message_parts) < 2:
                 continue  # 协议错误
 
             event_id = message_parts[0].decode('utf-8')
             buffer_bytes = message_parts[1]
 
-            if 'pose' in event_id:
-                pose_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if pose_array is not None:
+            if 'joint' in event_id:
+                joint_array = np.frombuffer(buffer_bytes, dtype=np.float32)
+                if joint_array is not None:
                     # print(f"Received pose data for event_id: {event_id}")
                     # print(f"Pose array shape: {pose_array.shape}")
                     # print(f"Pose array values: {pose_array}")
                     with lock:
-                        recv_pose[event_id] = pose_array
-                # else:
-                #     print(f"Failed to parse pose data for event_id: {event_id}")
-            
-            if 'rotation' in event_id:
-                rotation_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if rotation_array is not None:
-                    with lock:
-                        recv_rotation[event_id] = rotation_array
+                        recv_joint[event_id] = joint_array
 
         except zmq.Again:
-            print(f"VIVE Received Timeout")
+            print(f"SO101 Joint Received Timeout")
             continue
         except Exception as e:
-            print("recv error:", e)
+            print("recv joint error:", e)
             break
-
-
-gripper_socket = zmq_context.socket(zmq.PAIR)
-gripper_socket.bind(gripper_ipc_address)
-gripper_socket.setsockopt(zmq.RCVTIMEO, 300)
-gripper_running_server = True
-
-def gripper_recv_server():
-    """接收数据线程"""
-    while gripper_running_server:
-        try:
-
-            message_parts = gripper_socket.recv_multipart()
-            if len(message_parts) < 2:
-                continue  # 协议错误
-
-            event_id = message_parts[0].decode('utf-8')
-            buffer_bytes = message_parts[1]
-            metadata = json.loads(message_parts[2].decode('utf-8'))
-            
-            if 'gripper' in event_id:
-                gripper_array = np.frombuffer(buffer_bytes, dtype=np.float32)
-                if gripper_array is not None:
-                    with lock:
-                        recv_gripper[event_id] = gripper_array
-
-        except zmq.Again:
-            print(f"Pika Gripper Received Timeout")
-            continue
-        except Exception as e:
-            print("recv error:", e)
-            break
-
 
 
 
@@ -224,39 +173,39 @@ def make_cameras_from_configs(camera_configs: dict[str, CameraConfig]) -> list[C
 
 
 
-class PikaV1Manipulator:
-    def __init__(self, config: AlohaRobotConfig):
+class SO101Manipulator:
+    def __init__(self, config: SO101RobotConfig):
         self.config = config
         self.robot_type = self.config.type
 
+        self.use_videos = self.config.use_videos
+
+        self.microphones = self.config.microphones
+
+        self.leader_arms = {}
+        self.leader_arms['main_leader'] = self.config.leader_arms["main"]
+
         self.follower_arms = {}
-        self.follower_arms['right'] = self.config.right_leader_arm.motors
-        self.follower_arms['left'] = self.config.left_leader_arm.motors
+        self.follower_arms['main_follower'] = self.config.follower_arms["main"]
 
         self.cameras = make_cameras_from_configs(self.config.cameras)
-        self.microphones = self.config.microphones
         
         self.connect_excluded_cameras = ["image_pika_pose"]
 
-        pika_recv_thread = threading.Thread(target=pika_recv_server, daemon=True)
-        pika_recv_thread.start()
+        self.recv_image_thread = threading.Thread(target=recv_image_server, daemon=True)
+        self.recv_image_thread.start()
 
-        vive_recv_thread = threading.Thread(target=vive_recv_server, daemon=True)
-        vive_recv_thread.start()
+        self.recv_joint_thread = threading.Thread(target=recv_joint_server, daemon=True)
+        self.recv_joint_thread.start()
 
-        gripper_recv_thread = threading.Thread(target=gripper_recv_server, daemon=True)
-        gripper_recv_thread.start()
-
-        self.pika_transferorm = Transformer()
         
         self.is_connected = False
         self.logs = {}
-        self.frame_counter = 0  # 帧计数器
 
 
 
     def get_motor_names(self, arm: dict[str, dict]) -> list:
-        return [f"{arm}_{motor}" for arm, motors in arm.items() for motor in motors]
+        return [f"{arm}_{motor}" for arm, bus in arm.items() for motor in bus.motors.items()]
 
     @property
     def camera_features(self) -> dict:
@@ -284,7 +233,7 @@ class PikaV1Manipulator:
     
     @property
     def motor_features(self) -> dict:
-        action_names = self.get_motor_names(self.follower_arms)
+        action_names = self.get_motor_names(self.leader_arms)
         state_names = self.get_motor_names(self.follower_arms)
         return {
             "action": {
@@ -312,28 +261,20 @@ class PikaV1Manipulator:
             ),
             (
                 lambda: all(
-                    any(name in key for key in recv_rotation)
-                    for name in self.follower_arms
+                    any(name in key for key in recv_joint)
+                    for name in self.leader_arms
                 ),
-                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_rotation)],
-                "等待旋转角度数据超时"
+                lambda: [name for name in self.leader_arms if not any(name in key for key in recv_joint)],
+                "等待主臂关节角度超时"
             ),
             (
                 lambda: all(
-                    any(name in key for key in recv_pose)
+                    any(name in key for key in recv_joint)
                     for name in self.follower_arms
                 ),
-                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_pose)],
-                "等待机械臂末端位姿超时"
+                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_joint)],
+                "等待从臂关节角度超时"
             ),
-            (
-                lambda: all(
-                    any(name in key for key in recv_gripper)
-                    for name in self.follower_arms
-                ),
-                lambda: [name for name in self.follower_arms if not any(name in key for key in recv_gripper)],
-                "等待机械臂夹爪超时"
-            )
         ]
 
         # 跟踪每个条件是否已完成
@@ -396,13 +337,21 @@ class PikaV1Manipulator:
             cam_received = [name for name in self.cameras 
                         if name in recv_images and name not in self.connect_excluded_cameras]
             success_messages.append(f"摄像头: {', '.join(cam_received)}")
+
+        # 主臂数据状态
+        arm_data_types = ["主臂关节角度",]
+        for i, data_type in enumerate(arm_data_types, 1):
+            if conditions[i][0]():
+                arm_received = [name for name in self.leader_arms 
+                            if any(name in key for key in (recv_joint,)[i-1])]
+                success_messages.append(f"{data_type}: {', '.join(arm_received)}")
         
-        # 机械臂数据状态
-        arm_data_types = ["旋转角度", "末端位姿", "夹爪状态"]
+        # 从臂数据状态
+        arm_data_types = ["从臂关节角度",]
         for i, data_type in enumerate(arm_data_types, 1):
             if conditions[i][0]():
                 arm_received = [name for name in self.follower_arms 
-                            if any(name in key for key in (recv_rotation, recv_pose, recv_gripper)[i-1])]
+                            if any(name in key for key in (recv_joint,)[i-1])]
                 success_messages.append(f"{data_type}: {', '.join(arm_received)}")
         
         # 打印成功连接信息
@@ -412,49 +361,6 @@ class PikaV1Manipulator:
         print(f"  总耗时: {time.perf_counter() - start_time:.2f}秒\n")
         # ===========================
 
-        print("\nPika获取初始位姿和旋转角度中...请将Pika双爪都平行正放, 夹爪朝向前方。")
-        while True:
-            follower_pos = {}
-            for name in self.follower_arms:
-                for match_name in recv_pose:
-                    if name in match_name:
-                        byte_array = np.zeros(3, dtype=np.float32)
-                        pose_read = recv_pose[match_name]
-
-                        byte_array[:3] = pose_read[:]
-                        byte_array = np.round(byte_array, 3)
-                        
-                        follower_pos[name] = byte_array
-
-            follower_rotation = {}
-            for name in self.follower_arms:
-                for match_name in recv_rotation:
-                    if name in match_name:
-                        byte_array = np.zeros(4, dtype=np.float32)
-                        rotation_read = recv_rotation[match_name]
-
-                        byte_array[:4] = rotation_read[:]
-                        byte_array = np.round(byte_array, 3)
-                        
-                        follower_rotation[name] = byte_array
-
-            all_trans_success = True
-            for name in self.follower_arms:
-                # print(f"Calling trans with - name: {name}, position: {follower_pos[name]}, rotation: {follower_rotation[name]}")
-
-                result = self.pika_transferorm.trans(position=follower_pos[name], rotation=follower_rotation[name], name=name)
-
-                if result is None:
-                    all_trans_success = False
-
-            if all_trans_success == True:
-                break
-
-            time.sleep(0.033)  # 等待33毫秒，约30FPS
-
-            if time.perf_counter() - start_time > timeout:
-                raise TimeoutError("获取初始位姿和旋转角度超时，请检查设备连接状态。")
-        
         self.is_connected = True
     
     @property
@@ -472,165 +378,67 @@ class PikaV1Manipulator:
     def teleop_step(
         self, record_data=False, 
     ) -> None | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
-        self.frame_counter += 1
 
         if not self.is_connected:
             raise RobotDeviceNotConnectedError(
                 "Aloha is not connected. You need to run `robot.connect()`."
             )
 
-        # for name in self.leader_arms:
-        #     # if name == "left":
-        #     #     continue
-        #     # 读取领导臂电机数据
-        #     read_start = time.perf_counter()
-        #     leader_pos = self.leader_arms[name].async_read("Present_Position")
-        #     # self.follower_arms[name].leader_pos = leader_pos
-        #     self.logs[f"read_leader_{name}_pos_dt_s"] = time.perf_counter() - read_start
-
-        #     # 电机数据到关节角度的转换，关节角度处理（向量化操作）
-        #     for i in range(7):
-        #         # 数值转换
-        #         value = round(leader_pos[i] * SCALE_FACTOR, 2)
-
-        #         # 特定关节取反（3号和5号）
-        #         if i in {3, 5}:
-        #             value = -value
-
-        #         # 限幅
-        #         clamped_value = max(self.follower_arms[name].joint_n_limit[i], min(self.follower_arms[name].joint_p_limit[i], value))
-
-        #         # 移动平均滤波
-        #         # filter_value = self.follower_arms[name].filters[i].update(clamped_value)
-
-        #         # if abs(filter_value - self.filters[i].get_last()) / WINDOW_SIZE > 180 ##超180度/s位移限制，暂时不弄
-
-        #         # 直接使用内存视图操作
-
-        #         # self.follower_arms[name].joint_teleop_write[i] = filter_value
-        #         self.follower_arms[name].joint_teleop_write[i] = clamped_value
-
-        #     # 电机角度到夹爪开合度的换算
-        #     giper_value = leader_pos[7] * GRIPPER_SCALE
-        #     self.follower_arms[name].clipped_gripper = max(0, min(100, int(giper_value)))
-
-        #     # 机械臂执行动作（调用透传API，控制gen72移动到目标位置）
-        #     write_start = time.perf_counter()
-        #     self.follower_arms[name].movej_canfd(self.follower_arms[name].joint_teleop_write)
-        #     if self.frame_counter % 5 == 0:
-        #         self.frame_counter = 0
-        #         self.follower_arms[name].write_single_register(self.follower_arms[name].clipped_gripper)
-        #     self.logs[f"write_follower_{name}_goal_pos_dt_s"] = time.perf_counter() - write_start
-
-        # print("end teleoperate")
-
         if not record_data:
             return
 
-        follower_pos = {}
+        follower_joint = {}
         for name in self.follower_arms:
-            for match_name in recv_pose:
+            for match_name in recv_joint:
                 if name in match_name:
                     now = time.perf_counter()
 
-                    byte_array = np.zeros(3, dtype=np.float32)
-                    pose_read = recv_pose[match_name]
+                    byte_array = np.zeros(6, dtype=np.float32)
+                    pose_read = recv_joint[match_name]
 
-                    byte_array[:3] = pose_read[:]
+                    byte_array[:6] = pose_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    follower_pos[name] = byte_array
+                    follower_joint[name] = torch.from_numpy(byte_array)
 
-                    self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - now
-
-        follower_rotation = {}
-        for name in self.follower_arms:
-            for match_name in recv_rotation:
+                    self.logs[f"read_follower_{name}_joint_dt_s"] = time.perf_counter() - now
+                    
+        leader_joint = {}
+        for name in self.leader_arms:
+            for match_name in recv_joint:
                 if name in match_name:
                     now = time.perf_counter()
 
-                    byte_array = np.zeros(4, dtype=np.float32)
-                    rotation_read = recv_rotation[match_name]
+                    byte_array = np.zeros(6, dtype=np.float32)
+                    pose_read = recv_joint[match_name]
 
-                    byte_array[:4] = rotation_read[:]
+                    byte_array[:6] = pose_read[:]
                     byte_array = np.round(byte_array, 3)
                     
-                    follower_rotation[name] = byte_array
+                    leader_joint[name] = torch.from_numpy(byte_array)
 
-                    self.logs[f"read_follower_{name}_rotation_dt_s"] = time.perf_counter() - now
-        
-        # 从VIVE坐标系变换到PIKA夹爪坐标系（相对第一帧，两夹爪中值）
-        for name in self.follower_arms:
-            # print(f"Calling trans with - name: {name}, position: {follower_pos[name]}, rotation: {follower_rotation[name]}")
-
-            result = self.pika_transferorm.trans(position=follower_pos[name], rotation=follower_rotation[name], name=name)
-            if result is None:
-                follower_pos[name] = np.zeros(3, dtype=np.float32)
-                follower_rotation[name] = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)  # 单位四元数
-            else:
-                try:
-                    new_pos, new_rot, *optional = result
-                    if optional and optional[0] is not None and "left" in name:
-                        recv_images["image_pika_pose"] = optional[0]
-                    follower_pos[name] = np.asarray(new_pos, dtype=np.float32).copy()
-                    follower_rotation[name] = np.asarray(new_rot, dtype=np.float32).copy()
-                except (TypeError, ValueError) as e:
-                    follower_pos[name] = np.zeros(3, dtype=np.float32)
-                    follower_rotation[name] = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
-
-            follower_pos[name] = torch.from_numpy(follower_pos[name])
-            follower_rotation[name] = torch.from_numpy(follower_rotation[name])
-
-        
-        follower_gripper = {}
-        for name in self.follower_arms:
-            for match_name in recv_gripper:
-                if name in match_name:
-                    now = time.perf_counter()
-
-                    byte_array = np.zeros(1, dtype=np.float32)
-                    gripper_read = recv_gripper[match_name]
-
-                    byte_array[:1] = gripper_read[:]
-                    byte_array = np.round(byte_array, 3)
-                    
-                    follower_gripper[name] = torch.from_numpy(byte_array)
-
-                    self.logs[f"read_follower_{name}_gripper_dt_s"] = time.perf_counter() - now
+                    self.logs[f"read_leader_{name}_joint_dt_s"] = time.perf_counter() - now
 
         #记录当前关节角度
         state = []
         for name in self.follower_arms:
-            if name in follower_pos:
-                state.append(follower_pos[name])
-            if name in follower_rotation:
-                state.append(follower_rotation[name])
-            if name in follower_gripper:
-                state.append(follower_gripper[name])
+            if name in follower_joint:
+                state.append(follower_joint[name])
         state = torch.cat(state)
 
         #将关节目标位置添加到 action 列表中
         action = []
-        for name in self.follower_arms:
-            if name in follower_pos:
-                action.append(follower_pos[name])
-            if name in follower_rotation:
-                action.append(follower_rotation[name])
-            if name in follower_gripper:
-                action.append(follower_gripper[name])
+        for name in self.leader_arms:
+            if name in leader_joint:
+                action.append(leader_joint[name])
         action = torch.cat(action)
 
         # Capture images from cameras
-        
         images = {}
         for name in self.cameras:
             now = time.perf_counter()
-            
             images[name] = recv_images[name]
-
-            # images[name] = self.cameras[name].async_read()
             images[name] = torch.from_numpy(images[name])
-            # self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs["delta_timestamp_s"]
             self.logs[f"read_camera_{name}_dt_s"] = time.perf_counter() - now
 
         # Populate output dictionnaries and format to pytorch
@@ -640,12 +448,8 @@ class PikaV1Manipulator:
         for name in self.cameras:
             obs_dict[f"observation.images.{name}"] = images[name]
 
-        # obs_dict["observation.images.image_pika_pose"] = torch.from_numpy(recv_images["image_pika_pose"])
-        
         # print("end teleoperate record")
-
         return obs_dict, action_dict
-
 
 
     # def capture_observation(self):
@@ -795,25 +599,15 @@ class PikaV1Manipulator:
             raise RobotDeviceNotConnectedError(
                 "Aloha is not connected. You need to run `robot.connect()` before disconnecting."
             )
-        
-        # for name in self.follower_arms:
-        #     self.follower_arms[name].disconnect()
-
-        # for name in self.leader_arms:
-        #     self.leader_arms[name].disconnect()
-
-        # for name in self.cameras:
-        #     self.cameras[name].disconnect()
 
         self.is_connected = False
-        global pika_running_server
-        global vive_running_server
-        global gripper_running_server
-        pika_running_server = False
-        vive_running_server = False
-        gripper_running_server = False
+        global running_recv_image_server
+        global running_recv_joint_server
+        running_recv_image_server = False
+        running_recv_joint_server = False
 
-        self.pika_transferorm.close()
+        self.recv_image_thread.join()
+        self.recv_joint_thread.join()
         
 
     def __del__(self):

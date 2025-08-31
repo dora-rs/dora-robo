@@ -16,7 +16,7 @@ from motors import Motor, MotorCalibration, MotorNormMode
 GET_DEVICE_FROM = os.getenv("GET_DEVICE_FROM", "PORT") # SN or INDEX
 PORT = os.getenv("PORT")
 ARM_NAME = os.getenv("ARM_NAME", "SO101-Arm")
-CALIBRATION_DIR = os.getenv("CALIBRATION_DIR", "./.calibation/")
+CALIBRATION_DIR = os.getenv("CALIBRATION_DIR", "./.calibration/")
 USE_DEGRESS = os.getenv("USE_DEGRESS", "True")
 ARM_ROLE = os.getenv("ARM_ROLE", "follower")
 
@@ -60,7 +60,7 @@ def main():
     node = Node()
 
     use_degrees = env_to_bool(USE_DEGRESS)
-    calibration_dir = Path(CALIBRATION_DIR)
+    calibration_dir = Path(CALIBRATION_DIR).resolve()
     calibration_fpath = calibration_dir / f"{ARM_NAME}.json"
     name = ARM_NAME
 
