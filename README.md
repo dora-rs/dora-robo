@@ -1,4 +1,6 @@
-# Operating-Platform
+# Dora-Robo
+
+This repo is for GSOC 2025 project- Improve Dora-Lerobot Demo Tutorial and Support additional hardware.  I have completed all the required features.
 
 ## Start (with Docker)
 
