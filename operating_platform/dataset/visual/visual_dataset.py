@@ -159,10 +159,10 @@ def visualize_dataset(
                 # display each camera image
                 for key in dataset.meta.camera_keys:
                     # TODO(rcadene): add `.compress()`? is it lossless?
-                    # rr.log(key, rr.Image(to_hwc_uint8_numpy(batch[key][i])))
+                    
                     if len(dataset.meta.video_keys)>0:
-                        # dataset.meta.video_path
-                        pass
+                        rr.log(key, rr.Image(to_hwc_uint8_numpy(batch[key][i])))
+                        # pass
                     elif len(dataset.meta.image_keys)>0:
                         img_path = dataset.root / dataset.meta.get_image_file_path(img_key=key, ep_index=episode_index, frame_index=batch["frame_index"][i])
                         # 1. 验证路径是否存在

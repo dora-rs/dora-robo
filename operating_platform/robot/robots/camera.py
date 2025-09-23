@@ -2,7 +2,7 @@ from typing import Protocol
 
 import numpy as np
 
-from operating_platform.robot.robots.com_configs.cameras import (
+from operating_platform.config.cameras import (
     CameraConfig,
     IntelRealSenseCameraConfig,
     OpenCVCameraConfig,
