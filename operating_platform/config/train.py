@@ -21,13 +21,13 @@ import draccus
 from huggingface_hub import hf_hub_download
 from huggingface_hub.errors import HfHubHTTPError
 
-from lerobot_lite import envs
-from lerobot_lite.optim import OptimizerConfig
-from lerobot_lite.optim.schedulers import LRSchedulerConfig
-from lerobot_lite.utils.hub import HubMixin
-from lerobot_lite.configs import parser
-from lerobot_lite.configs.default import DatasetConfig, EvalConfig, WandBConfig
-from lerobot_lite.configs.policies import PreTrainedConfig
+from operating_platform import envs
+from operating_platform.optim import OptimizerConfig
+from operating_platform.optim.schedulers import LRSchedulerConfig
+from operating_platform.utils.hub import HubMixin
+from operating_platform.config import parser
+from operating_platform.config.default import DatasetConfig, EvalConfig, WandBConfig
+from operating_platform.config.policies import PreTrainedConfig
 
 TRAIN_CONFIG_NAME = "train_config.json"
 
@@ -52,12 +52,12 @@ class TrainPipelineConfig(HubMixin):
     # Number of workers for the dataloader.
     num_workers: int = 4
     batch_size: int = 16
-    steps: int = 300_000
-    eval_freq: int = 20_000
+    steps: int = 10_000
+    eval_freq: int = 5_000
     log_freq: int = 200
     save_checkpoint: bool = True
     # Checkpoint is saved every `save_freq` training iterations and after the last training step.
-    save_freq: int = 50_000
+    save_freq: int = 5_000
     use_policy_training_preset: bool = True
     optimizer: OptimizerConfig | None = None
     scheduler: LRSchedulerConfig | None = None

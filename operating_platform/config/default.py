@@ -16,7 +16,7 @@
 
 from dataclasses import dataclass, field
 
-from lerobot_lite.datasets.transforms import ImageTransformsConfig
+from operating_platform.dataset.transforms import ImageTransformsConfig
 
 
 @dataclass
@@ -31,7 +31,7 @@ class DatasetConfig:
     episodes: list[int] | None = None
     image_transforms: ImageTransformsConfig = field(default_factory=ImageTransformsConfig)
     revision: str | None = None
-    use_imagenet_stats: bool = True
+    use_imagenet_stats: bool = False
     video_backend: str = "pyav"
 
 
@@ -42,7 +42,9 @@ class WandBConfig:
     disable_artifact: bool = False
     project: str = "lerobot"
     entity: str | None = None
+    run_id: str | None = None
     notes: str | None = None
+    mode: str | None = None  # Allowed values: 'online', 'offline' 'disabled'. Defaults to 'online'
 
 
 @dataclass

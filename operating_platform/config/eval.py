@@ -17,10 +17,10 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lerobot_lite import envs
-from lerobot_lite.configs import parser
-from lerobot_lite.configs.default import EvalConfig
-from lerobot_lite.configs.policies import PreTrainedConfig
+from operating_platform import envs
+from operating_platform.config import parser
+from operating_platform.config.default import EvalConfig
+from operating_platform.config.policies import PreTrainedConfig
 
 
 @dataclass

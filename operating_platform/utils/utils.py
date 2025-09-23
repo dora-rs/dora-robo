@@ -11,12 +11,58 @@ import numpy as np
 import torch
 
 
+def inside_slurm():
+    """Check whether the python process was launched through slurm"""
+    # TODO(rcadene): return False for interactive mode `--pty bash`
+    return "SLURM_JOB_ID" in os.environ
+
+def format_big_number(num, precision=0):
+    suffixes = ["", "K", "M", "B", "T", "Q"]
+    divisor = 1000.0
+
+    for suffix in suffixes:
+        if abs(num) < divisor:
+            return f"{num:.{precision}f}{suffix}"
+        num /= divisor
+
+    return num
+
+# class CustomFormatter(logging.Formatter):
+#     """自定义日志格式化器"""
+#     def format(self, record):
+#         dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 可改为 datetime.utcnow() 或带时区时间
+#         fnameline = f"{record.pathname}:{record.lineno}"
+#         return f"{record.levelname} {dt} {fnameline[-15:]:>15} {record.msg}"
+
+# ANSI 转义码（用于终端颜色）
+RESET = "\033[0m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+MAGENTA = "\033[35m"
+CYAN = "\033[36m"
+WHITE = "\033[37m"
+BOLD_RED = "\033[1;31m"
+
+
 class CustomFormatter(logging.Formatter):
-    """自定义日志格式化器"""
+    """自定义日志格式化器，支持颜色输出"""
+
+    FORMAT = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: CYAN + FORMAT + RESET,
+        logging.INFO: GREEN + FORMAT + RESET,
+        logging.WARNING: YELLOW + FORMAT + RESET,
+        logging.ERROR: RED + FORMAT + RESET,
+        logging.CRITICAL: BOLD_RED + FORMAT + RESET,
+    }
+
     def format(self, record):
-        dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 可改为 datetime.utcnow() 或带时区时间
-        fnameline = f"{record.pathname}:{record.lineno}"
-        return f"{record.levelname} {dt} {fnameline[-15:]:>15} {record.msg}"
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
+        return formatter.format(record)
 
 def init_logging(level=logging.DEBUG, force=False):
     """

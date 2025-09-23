@@ -94,12 +94,26 @@ def main():
     elif ARM_ROLE == "leader":
         configure_leader(arm_bus)
 
+    ctrl_frame = 0
+
     for event in node:
         if event["type"] == "INPUT":
             if "action" in event["id"]:
                 pass
+
             if event["id"] == "action_joint":
                 position = event["value"].to_numpy()
+
+                if ctrl_frame > 0:
+                    continue
+
+                goal_pos = {key: position[motor.id - 1] for key, motor in arm_bus.motors.items()}
+                arm_bus.sync_write("Goal_Position", goal_pos)
+
+            if event["id"] == "action_joint_ctrl":
+                position = event["value"].to_numpy()
+
+                ctrl_frame = 200
 
                 goal_pos = {key: position[motor.id - 1] for key, motor in arm_bus.motors.items()}
                 arm_bus.sync_write("Goal_Position", goal_pos)
@@ -110,6 +124,8 @@ def main():
                 joint_value = [val for _motor, val in present_pos.items()]
 
                 node.send_output("joint", pa.array(joint_value, type=pa.float32()))
+
+            ctrl_frame -= 1
 
         elif event["type"] == "STOP":
             break

@@ -18,7 +18,17 @@ from operating_platform.robot.robots.utils import (
 from operating_platform.utils.utils import (
     init_logging,
     log_say,
+    get_current_git_branch,
+    git_branch_log
 )
+from operating_platform.utils import parser
+import queue
+import threading
+from operating_platform.dataset.visual.visual_dataset import visualize_dataset
+
+
+RERUN_WEB_PORT = 9195
+RERUN_WS_PORT = 9285
 
 
 @dataclass
@@ -70,9 +80,80 @@ def replay(cfg: ReplayConfig):
     # robot.disconnect()
 
 
-def main():
-    replay()
+@dataclass
+class ControlPipelineConfig:
+    robot: RobotConfig
+    replay: DatasetReplayConfig
 
+    @classmethod
+    def __get_path_fields__(cls) -> list[str]:
+        """This enables the parser to load config from the policy using `--policy.path=local/dir`"""
+        return ["control.policy"]
 
+@parser.wrap()
+def main(cfg: ControlPipelineConfig):
+    init_logging()
+    git_branch_log()
+    logging.info(pformat(asdict(cfg)))
+
+    daemon = Daemon(fps=cfg.replay.fps)
+    daemon.start(cfg.robot)
+
+    replay_cfg = ReplayConfig(daemon.robot, cfg.replay)
+    dataset = DoRobotDataset(cfg.replay.repo_id, root=cfg.replay.root)
+
+    # 用于线程间通信的异常队列
+    error_queue = queue.Queue()
+    # 用于通知replay线程停止的事件
+    stop_event = threading.Event()
+
+    def visual_worker():
+        """visual工作线程函数"""
+        try:
+            # 主线程执行可视化（阻塞直到窗口关闭或超时）
+            visualize_dataset(
+                dataset,
+                mode="distant",
+                episode_index=cfg.replay.episode,
+                web_port=RERUN_WEB_PORT,
+                ws_port=RERUN_WS_PORT,
+                stop_event=stop_event  # 需要replay函数支持stop_event参数
+            )
+        except Exception as e:
+            error_queue.put(e)
+
+    # 创建并启动replay线程
+    visual_thread = threading.Thread(
+        target=visual_worker,
+        name="VisualThread",
+        daemon=True  # 设置为守护线程，主程序退出时自动终止
+    )
+    visual_thread.start()
+
+    print(f"Visual at: http://localhost:{RERUN_WEB_PORT}/?url=ws://localhost:{RERUN_WS_PORT}")
+
+    try:
+        replay(replay_cfg)
+    finally:
+        # 无论可视化是否正常结束，都通知replay线程停止
+        stop_event.set()
+        # 等待replay线程安全退出（设置合理超时）
+        visual_thread.join(timeout=5.0)
+        
+        # 检查线程是否已退出
+        if visual_thread.is_alive():
+            print("Warning: Visual thread did not exit cleanly")
+        
+        # 处理子线程异常
+        try:
+            error = error_queue.get_nowait()
+            raise RuntimeError(f"Visual failed in thread: {str(error)}") from error
+        except queue.Empty:
+            pass
+            
+    print("="*20)
+    print("Replay Complete Success!")
+    print("="*20)
+    
 if __name__ == "__main__":
     main()

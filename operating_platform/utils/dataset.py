@@ -24,7 +24,8 @@ from operating_platform.utils.utils import is_valid_numpy_dtype_string
 
 # from lerobot_lite.robots.utils import Robot
 
-# from lerobot_lite.configs.types import DictLike, FeatureType, PolicyFeature
+from operating_platform.config.types import DictLike, FeatureType, PolicyFeature
+
 
 DEFAULT_CHUNK_SIZE = 10000  # Max number of episodes per chunk
 
@@ -368,6 +369,35 @@ def get_hf_features_from_features(features: dict) -> datasets.Features:
 
 #     return policy_features
 
+def dataset_to_policy_features(features: dict[str, dict]) -> dict[str, PolicyFeature]:
+    # TODO(aliberts): Implement "type" in dataset features and simplify this
+    policy_features = {}
+    for key, ft in features.items():
+        shape = ft["shape"]
+        if ft["dtype"] in ["image", "video"]:
+            type = FeatureType.VISUAL
+            if len(shape) != 3:
+                raise ValueError(f"Number of dimensions of {key} != 3 (shape={shape})")
+
+            names = ft["names"]
+            # Backward compatibility for "channel" which is an error introduced in LeRobotDataset v2.0 for ported datasets.
+            if names[2] in ["channel", "channels"]:  # (h, w, c) -> (c, h, w)
+                shape = (shape[2], shape[0], shape[1])
+        elif key == "observation.environment_state":
+            type = FeatureType.ENV
+        elif key.startswith("observation"):
+            type = FeatureType.STATE
+        elif key.startswith("action"):
+            type = FeatureType.ACTION
+        else:
+            continue
+
+        policy_features[key] = PolicyFeature(
+            type=type,
+            shape=shape,
+        )
+
+    return policy_features
 
 def create_empty_dataset_info(
     codebase_version: str,
@@ -397,6 +427,55 @@ def create_empty_dataset_info(
         "features": features,
     }
 
+def _validate_feature_names(features: dict[str, dict]) -> None:
+    invalid_features = {name: ft for name, ft in features.items() if "/" in name}
+    if invalid_features:
+        raise ValueError(f"Feature names should not contain '/'. Found '/' in '{invalid_features}'.")
+
+def hw_to_dataset_features(
+    hw_features: dict[str, type | tuple], prefix: str, use_video: bool = True
+) -> dict[str, dict]:
+    features = {}
+    joint_fts = {key: ftype for key, ftype in hw_features.items() if ftype is float}
+    cam_fts = {key: shape for key, shape in hw_features.items() if isinstance(shape, tuple)}
+
+    if joint_fts and prefix == "action":
+        features[prefix] = {
+            "dtype": "float32",
+            "shape": (len(joint_fts),),
+            "names": list(joint_fts),
+        }
+
+    if joint_fts and prefix == "observation":
+        features[f"{prefix}.state"] = {
+            "dtype": "float32",
+            "shape": (len(joint_fts),),
+            "names": list(joint_fts),
+        }
+
+    for key, shape in cam_fts.items():
+        features[f"{prefix}.images.{key}"] = {
+            "dtype": "video" if use_video else "image",
+            "shape": shape,
+            "names": ["height", "width", "channels"],
+        }
+
+    _validate_feature_names(features)
+    return features
+
+def build_dataset_frame(
+    ds_features: dict[str, dict], values: dict[str, Any], prefix: str
+) -> dict[str, np.ndarray]:
+    frame = {}
+    for key, ft in ds_features.items():
+        if key in DEFAULT_FEATURES or not key.startswith(prefix):
+            continue
+        elif ft["dtype"] == "float32" and len(ft["shape"]) == 1:
+            frame[key] = np.array([values[name] for name in ft["names"]], dtype=np.float32)
+        elif ft["dtype"] in ["image", "video"]:
+            frame[key] = values[key.removeprefix(f"{prefix}.images.")]
+
+    return frame
 
 def get_episode_data_index(
     episode_dicts: dict[dict], episodes: list[int] | None = None
@@ -652,7 +731,7 @@ def validate_frame(frame: dict, features: dict):
         if key.startswith("observation.audio")
     }
 
-    expected_features = (set(features) - set(DEFAULT_FEATURES.keys()) - set(excluded_features))| {"task"}
+    expected_features = (set(features) - set(DEFAULT_FEATURES.keys()) - set(excluded_features))
     actual_features = set(frame.keys())
 
     error_message = validate_features_presence(actual_features, expected_features, optional_features)
