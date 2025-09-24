@@ -21,6 +21,10 @@ from operating_platform.utils.data_file import (
     update_common_record_json,
     delete_dataid_json
 )
+from operating_platform.utils.dataset import (
+    build_dataset_frame,
+    hw_to_dataset_features,
+)
 
 
 def sanity_check_dataset_robot_compatibility(
@@ -115,6 +119,10 @@ class Record:
         self.record_complete = False
         self.save_data = None
 
+        action_features = hw_to_dataset_features(robot.action_features, "action", self.robot.use_videos)
+        obs_features = hw_to_dataset_features(robot.observation_features, "observation", self.robot.use_videos)
+        dataset_features = {**action_features, **obs_features}
+
         if self.record_cfg.resume:
             self.dataset = DoRobotDataset(
                 record_cfg.repo_id,
@@ -138,6 +146,7 @@ class Record:
                 record_cfg.fps,
                 root=record_cfg.root,
                 robot=robot,
+                features=dataset_features,
                 use_videos=record_cfg.video,
                 use_audios=len(robot.microphones) > 0,
                 image_writer_processes=record_cfg.num_image_writer_processes,
@@ -159,8 +168,11 @@ class Record:
                 observation = self.daemon.get_observation()
                 action = self.daemon.get_obs_action()
 
-                frame = {**observation, **action, "task": self.record_cfg.single_task}
-                self.dataset.add_frame(frame)
+                if self.dataset is not None:
+                    observation_frame = build_dataset_frame(self.dataset.features, observation, prefix="observation")
+                    action_frame = build_dataset_frame(self.dataset.features, action, prefix="action")
+                    frame = {**observation_frame, **action_frame}
+                    self.dataset.add_frame(frame, self.record_cfg.single_task)
 
                 dt_s = time.perf_counter() - start_loop_t
 

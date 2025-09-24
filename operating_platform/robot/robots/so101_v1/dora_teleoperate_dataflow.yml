@@ -39,6 +39,7 @@ nodes:
     inputs:
       get_joint: dora/timer/millis/33
       action_joint: arm_so101_leader/joint
+      action_joint_ctrl: so101_zeromq/action_joint
     outputs:
       - joint
     env:

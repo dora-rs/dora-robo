@@ -1,1 +1,0 @@
-docker build -f operating_platform/robot/robots/pika_v1/docker/Dockerfile.pika_v1 -t dr-image-pika-v1:V0.1 .

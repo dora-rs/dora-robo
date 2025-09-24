@@ -28,6 +28,11 @@ python operating_platform/dataset/visual/visual_dataset.py \
     --mode distant
 
 python operating_platform/dataset/visual/visual_dataset.py \
+    --repo-id "20250903/dev/so101-test" \
+    --episode-index 0 \
+    --mode distant
+
+python operating_platform/dataset/visual/visual_dataset.py \
     --repo-id "20250826/dev/倒水_111_277" \
     --episode-index 0 \
     --mode distant

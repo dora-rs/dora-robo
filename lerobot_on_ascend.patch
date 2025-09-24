@@ -1,0 +1,85 @@
+diff --git a/lerobot/common/datasets/utils.py b/lerobot/common/datasets/utils.py
+index 9d8a54db..ba57b37b 100644
+--- a/lerobot/common/datasets/utils.py
++++ b/lerobot/common/datasets/utils.py
+@@ -755,7 +755,7 @@ def validate_feature_numpy_array(
+         actual_shape = value.shape
+ 
+         if actual_dtype != np.dtype(expected_dtype):
+-            error_message += f"The feature '{name}' of dtype '{actual_dtype}' is not of the expected dtype '{expected_dtype}'.\n"
++            # error_message += f"The feature '{name}' of dtype '{actual_dtype}' is not of the expected dtype '{expected_dtype}'.\n"
+ 
+         if actual_shape != expected_shape:
+             error_message += f"The feature '{name}' of shape '{actual_shape}' does not have the expected shape '{expected_shape}'.\n"
+diff --git a/lerobot/common/policies/act/modeling_act.py b/lerobot/common/policies/act/modeling_act.py
+index 72d4df03..98fbd4c5 100644
+--- a/lerobot/common/policies/act/modeling_act.py
++++ b/lerobot/common/policies/act/modeling_act.py
+@@ -72,6 +72,7 @@ class ACTPolicy(PreTrainedPolicy):
+         )
+ 
+         self.model = ACT(config)
++        self.model = self.model.half()
+ 
+         if config.temporal_ensemble_coeff is not None:
+             self.temporal_ensembler = ACTTemporalEnsembler(config.temporal_ensemble_coeff, config.chunk_size)
+@@ -337,10 +338,12 @@ class ACT(nn.Module):
+                 weights=config.pretrained_backbone_weights,
+                 norm_layer=FrozenBatchNorm2d,
+             )
++            backbone_model = backbone_model.half()
+             # Note: The assumption here is that we are using a ResNet model (and hence layer4 is the final
+             # feature map).
+             # Note: The forward method of this returns a dict: {"feature_map": output}.
+             self.backbone = IntermediateLayerGetter(backbone_model, return_layers={"layer4": "feature_map"})
++            self.backbone = self.backbone.half()
+ 
+         # Transformer (acts as VAE decoder when training with the variational objective).
+         self.encoder = ACTEncoder(config)
+@@ -488,7 +491,7 @@ class ACT(nn.Module):
+ 
+             # For a list of images, the H and W may vary but H*W is constant.
+             for img in batch["observation.images"]:
+-                cam_features = self.backbone(img)["feature_map"]
++                cam_features = self.backbone(img.half())["feature_map"]
+                 cam_pos_embed = self.encoder_cam_feat_pos_embed(cam_features).to(dtype=cam_features.dtype)
+                 cam_features = self.encoder_img_feat_input_proj(cam_features)
+ 
+diff --git a/lerobot/common/policies/pretrained.py b/lerobot/common/policies/pretrained.py
+index da4ef157..026aafc9 100644
+--- a/lerobot/common/policies/pretrained.py
++++ b/lerobot/common/policies/pretrained.py
+@@ -132,6 +132,7 @@ class PreTrainedPolicy(nn.Module, HubMixin, abc.ABC):
+ 
+         policy.to(config.device)
+         policy.eval()
++        policy = policy.half()
+         return policy
+ 
+     @classmethod
+diff --git a/lerobot/common/utils/utils.py b/lerobot/common/utils/utils.py
+index 563a7b81..55fb7ed1 100644
+--- a/lerobot/common/utils/utils.py
++++ b/lerobot/common/utils/utils.py
+@@ -24,6 +24,7 @@ from pathlib import Path
+ 
+ import numpy as np
+ import torch
++import torch_npu
+ 
+ 
+ def none_or_int(value):
+@@ -46,9 +47,13 @@ def auto_select_torch_device() -> torch.device:
+     elif torch.backends.mps.is_available():
+         logging.info("Metal backend detected, using cuda.")
+         return torch.device("mps")
++    elif torch_npu.npu.is_available():
++        logging.info("Metal backend detected, using npu.")
++        return torch.device("npu")
+     else:
+         logging.warning("No accelerated backend detected. Using default cpu, this will be slow.")
+         return torch.device("cpu")
++        
+ 
+ 
+ # TODO(Steven): Remove log. log shouldn't be an argument, this should be handled by the logger level
